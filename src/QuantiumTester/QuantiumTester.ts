@@ -1,43 +1,51 @@
-export class QuantiumTesting {
-  private _object: {[key: string]: any};
+import { QRange } from './definitions/range';
+import { StringDefinition } from './definitions/string-definition';
+import { Chance } from 'chance';
 
-  public setProperty(name, val: Range | StringDefinition[]) {
-    this._object.name = val;
+export class QuantiumTesting {
+  private _object: { [key: string]: any };
+  private _chance;
+
+  constructor(seed?: number) {
+    if (!seed) {
+      seed = Math.round(Math.random() * (Math.random() * 153000));
+      console.warn(`QuantiumTesting: Seed not specified using seed ${ seed }`);
+    }
+    this._object = {};
+    this._chance = new Chance(seed);
   }
 
   /**
-   * Generates a string based on the String definition provided
-   * @param length the length of the string
-   * @param chars the {@link StringDefinition} to use
+   * Sets the properties of the inner object
+   * @param name the name of the value
+   * @param val the actual value
    */
-  private randomString = (length, chars: StringDefinition[]) => {
-    let mask = '';
+  public setProperty(name, val: QRange | StringDefinition) {
+    this._object[name] = val;
+  }
 
-    if (chars.includes(StringDefinition.LOWER_LETTERS)) {
-      mask += 'abcdefghijklmnopqrstuvwxyz';
-    }
-    if (chars.includes(StringDefinition.UPPER_CASE_LETTERS)) {
-      mask += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    }
-    if (chars.includes(StringDefinition.NUMERIC)) {
-      mask += '0123456789';
-    }
-    if (chars.includes(StringDefinition.SPECIAL_CHARS)) {
-      mask += '~`!@#$%^&*()_+-={}[]:";\'<>?,./|\\';
-    }
+  public generateObject<T>(): T {
+    const obj = {};
+    Object.keys(this._object).forEach(key => {
+      if (this._object[key] instanceof StringDefinition) {
+        const sDef: StringDefinition = (this._object[key] as StringDefinition);
+        sDef.chance = this._chance;
+        obj[key] = sDef.randomString();
+      }
+      if (this._object[key] instanceof QRange) {
+        const qRange: QRange = (this._object[key] as QRange);
+        qRange.chance = this._chance;
+        obj[key] = qRange.generate();
+      }
+    });
 
-    let result = '';
+    return obj as T;
+  }
 
-    for (let i = length; i > 0; i -= 1) {
-      result += mask[Math.floor(Math.random() * mask.length)];
-    }
-
-    return result;
-  };
 
 }
 
-export enum StringDefinition {
+export enum StringDefinitionValue {
   /**
    * Indicates to include lower case letters
    */
@@ -53,5 +61,9 @@ export enum StringDefinition {
   /**
    * indicates inclusion of special characters
    */
-  SPECIAL_CHARS = '!'
+  SPECIAL_CHARS = '!',
+  /**
+   * Indicate inclusion of all characters
+   */
+  ALL = 'ALL'
 }
