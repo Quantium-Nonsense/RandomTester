@@ -1,10 +1,20 @@
 import { QRange } from './definitions/range';
+import { Stage } from './definitions/Stage';
 import { StringDefinition } from './definitions/string-definition';
 import { Chance } from 'chance';
+import { StagingError } from './errors/staging.error';
 
 export class QuantiumTesting {
-  private _object: { [key: string]: any };
-  private _chance;
+  private readonly _object: { [key: string]: any };
+  private readonly _chance;
+  /**
+   * User should be allowed to store staging functions
+   * i.e
+   * on start execute this
+   * on middle execute this
+   * on end run tests
+   */
+  private readonly _staging: Map<string, Stage>;
 
   constructor(seed?: number) {
     if (!seed) {
@@ -35,6 +45,34 @@ export class QuantiumTesting {
     }
     return obj;
   }
+
+  /**
+   * Set steps for the tester to execute in an order or call them manually by the stageName in {@link Stage}
+   * @param stage The stage with ascociated actions and order
+   * @param override In case of a stage with the same name or order already defined this will override it or throw error
+   */
+  public setStaging(stage: Stage, override = false): void {
+    let stageToAdd: Stage;
+
+    // Look if any stage with the same stage name or order is already defined
+    this._staging.forEach((value: Stage, key: string) => {
+      if (this._staging.get(key) || value.stageOrder === stage.stageOrder) {
+        stageToAdd = value;
+      }
+    });
+
+    // If it is but we have not been told to override throw error
+    if (stageToAdd && !override) {
+      throw new StagingError();
+    } else if (stageToAdd && override) {
+      // Else if we been told to override
+      // Delete old and override
+      this._staging.delete(stageToAdd.stageName);
+      this._staging.set(stage.stageName, stage);
+    }
+    this._staging.set(stage.stageName, stage);
+  }
+
 
   private generateObject<T>(): T {
     const obj = {};

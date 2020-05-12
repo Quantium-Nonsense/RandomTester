@@ -1,4 +1,4 @@
-import { StringDefError } from '../errors/string-def-error';
+import { StringDefError } from '../errors/string-def.error';
 import { StringDefinitionValue } from '../QuantiumTester';
 import { Seedable } from './seedable';
 
