@@ -7,7 +7,13 @@ export class StringDefinition extends Seedable {
   private _length: number;
   private _custom: boolean;
 
-  constructor(defs: StringDefinitionValue[] | string[], length: number, custom = false) {
+  /**
+   * Creates a new String definition object that allows for random strings, or random strings based on strings provided
+   * @param defs The random String that will be returned either from custom definition or random generated
+   * @param length The length of the random generated strings - Doesnt matter if custom is set to true
+   * @param custom If the user wants to provide custom strings to generate from
+   */
+  constructor(defs: StringDefinitionValue[] | string[], length: number = null, custom = false) {
     super();
     this._definitions = defs;
     this._length = length;

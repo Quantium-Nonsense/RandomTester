@@ -24,7 +24,11 @@ export class QuantiumTesting {
     this._object[name] = val;
   }
 
-  public generateObjects<T>(quantity: number): T[] {
+  /**
+   * Generates objects specified by the generics provided
+   * @param quantity How many objects to create default 1
+   */
+  public generateObjects<T>(quantity = 1): T[] {
     const obj: T[] = [];
     for (let i = 0; i < quantity; i++) {
       obj.push(this.generateObject<T>());
