@@ -24,7 +24,15 @@ export class QuantiumTesting {
     this._object[name] = val;
   }
 
-  public generateObject<T>(): T {
+  public generateObjects<T>(quantity: number): T[] {
+    const obj: T[] = [];
+    for (let i = 0; i < quantity; i++) {
+      obj.push(this.generateObject<T>());
+    }
+    return obj;
+  }
+
+  private generateObject<T>(): T {
     const obj = {};
     Object.keys(this._object).forEach(key => {
       if (this._object[key] instanceof StringDefinition) {
