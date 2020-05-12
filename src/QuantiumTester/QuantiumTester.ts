@@ -1,7 +1,7 @@
 import { Chance } from 'chance';
-import { QRange } from './definitions/range';
+import { QRange } from './definitions/generators/range';
 import { Stage } from './definitions/Stage';
-import { StringDefinition } from './definitions/string-definition';
+import { StringDefinition } from './definitions/generators/string-definition';
 import { StageError, StagingError } from './errors/staging.error';
 
 export class QuantiumTesting {
@@ -32,6 +32,7 @@ export class QuantiumTesting {
    * @param val the actual value
    */
   public setProperty(name, val: QRange | StringDefinition) {
+    val.chance = this._chance;
     this._object[name] = val;
   }
 
@@ -65,7 +66,7 @@ export class QuantiumTesting {
 
     // If it is but we have not been told to override throw error
     if (stageToAdd && !override) {
-      throw new StagingError();
+      throw new StagingError(StageError.STAGE_EXISTS);
     } else if (stageToAdd && override) {
       // Else if we been told to override
       // Delete old and override
@@ -79,13 +80,20 @@ export class QuantiumTesting {
    * Runs a specific stage by name
    * @param stageName The name of the stage to run
    * @param remove if the stage should be removed after it has run
+   * @param withInnerProp Run stage with a property generated in the object
    */
-  public runStage(stageName: string, remove = false): void {
+  public runStage(stageName: string, remove = false, withInnerProp: string = null): void {
     const stage = this._staging.get(stageName);
     if (!stage) {
       throw new StagingError(StageError.STAGE_NOT_FOUND);
     }
-    stage.action();
+    if (withInnerProp) {
+      if (this._object.hasOwnProperty(withInnerProp)) {
+        stage.action(this._object[withInnerProp].generate());
+      }
+    } else {
+      stage.action();
+    }
     if (remove) {
       this._staging.delete(stage.stageName);
     }
@@ -107,12 +115,10 @@ export class QuantiumTesting {
     Object.keys(this._object).forEach(key => {
       if (this._object[key] instanceof StringDefinition) {
         const sDef: StringDefinition = (this._object[key] as StringDefinition);
-        sDef.chance = this._chance;
-        obj[key] = sDef.randomString();
+        obj[key] = sDef.generate();
       }
       if (this._object[key] instanceof QRange) {
         const qRange: QRange = (this._object[key] as QRange);
-        qRange.chance = this._chance;
         obj[key] = qRange.generate();
       }
     });

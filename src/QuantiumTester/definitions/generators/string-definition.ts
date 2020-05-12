@@ -1,8 +1,9 @@
-import { StringDefError } from '../errors/string-def.error';
-import { StringDefinitionValue } from '../QuantiumTester';
-import { Seedable } from './seedable';
+import { StringDefError } from '../../errors/string-def.error';
+import { StringDefinitionValue } from '../../QuantiumTester';
+import { Seedable } from '../seedable';
+import { IGenerator } from './IGenerator';
 
-export class StringDefinition extends Seedable {
+export class StringDefinition extends Seedable implements IGenerator{
   private _definitions: StringDefinitionValue[] | string[] = [];
   private _length: number;
   private _custom: boolean;
@@ -25,7 +26,7 @@ export class StringDefinition extends Seedable {
    * @param length the length of the string
    * @param chars the {@link StringDefinitionValue} to use
    */
-  public randomString = (): string => {
+  public generate = (): string => {
     if (!this._definitions) {
       throw new StringDefError();
     }

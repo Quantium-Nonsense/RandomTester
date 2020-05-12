@@ -1,7 +1,7 @@
-import * as Chance from 'chance';
-import { Seedable } from './seedable';
+import { Seedable } from '../seedable';
+import { IGenerator } from './IGenerator';
 
-export class QRange extends Seedable {
+export class QRange extends Seedable implements IGenerator {
   private _from: number;
   private _to: number;
   private _asInteger: boolean;
