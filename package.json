@@ -1,15 +1,14 @@
 {
   "name": "quantium_testing",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "description": "Random testing creator",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
     "format": "eslint **/*.ts",
     "version": "npm run format && git add -A src"
   },
-  "files": ["lib/**/*"],
   "dependencies": {
     "jasmine-core": "~3.4.0",
     "jasmine-spec-reporter": "~4.2.1",
