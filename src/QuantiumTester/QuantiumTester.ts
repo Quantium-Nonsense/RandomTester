@@ -80,17 +80,21 @@ export class QuantiumTesting {
    * Runs a specific stage by name
    * @param stageName The name of the stage to run
    * @param remove if the stage should be removed after it has run
-   * @param withInnerProp Run stage with a property generated in the object
+   * @param withInnerProps Run stage with a property generated in the object
    */
-  public runStage(stageName: string, remove = false, withInnerProp: string = null): void {
+  public runStage(stageName: string, remove = false, withInnerProps: string[] = null): void {
     const stage = this._staging.get(stageName);
     if (!stage) {
       throw new StagingError(StageError.STAGE_NOT_FOUND);
     }
-    if (withInnerProp) {
-      if (this._object.hasOwnProperty(withInnerProp)) {
-        stage.action(this._object[withInnerProp].generate());
-      }
+    if (withInnerProps) {
+      const propsList = [];
+      withInnerProps.forEach(prop => {
+        if (this._object.hasOwnProperty(prop)) {
+          propsList.push(this._object[prop].generate());
+        }
+      });
+      stage.action(...propsList);
     } else {
       stage.action();
     }

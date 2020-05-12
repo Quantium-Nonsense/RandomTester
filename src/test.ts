@@ -40,12 +40,16 @@ const advanceDemo = (): void => {
     StringDefinitionValue.LOWER_LETTERS,
     StringDefinitionValue.NUMERIC
   ], 35));
+  q.setProperty('errorVal', new StringDefinition([
+    StringDefinitionValue.UPPER_CASE_LETTERS,
+    StringDefinitionValue.SPECIAL_CHARS
+  ], 35));
 
-  const f = (v): void => {
-    console.log(`Hello from ${ v }!`);
+  const f = (v, c): void => {
+    console.log(`Hello from ${ v } and ${ c }!`);
   };
-  q.setStaging(new Stage('Stage 1', (v) => console.log(`Hello from ${ v } !`)));
-  q.runStage('Stage 1', false, 'logValue');
+  q.setStaging(new Stage('Stage 1', (value1, value2) => f(value1, value2)));
+  q.runStage('Stage 1', false, ['logValue', 'errorVal']);
 };
 
 simpleDemo();
