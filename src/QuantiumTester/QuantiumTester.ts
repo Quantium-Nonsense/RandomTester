@@ -1,8 +1,8 @@
+import { Chance } from 'chance';
 import { QRange } from './definitions/range';
 import { Stage } from './definitions/Stage';
 import { StringDefinition } from './definitions/string-definition';
-import { Chance } from 'chance';
-import { StagingError } from './errors/staging.error';
+import { StageError, StagingError } from './errors/staging.error';
 
 export class QuantiumTesting {
   private readonly _object: { [key: string]: any };
@@ -23,6 +23,7 @@ export class QuantiumTesting {
     }
     this._object = {};
     this._chance = new Chance(seed);
+    this._staging = new Map<string, Stage>();
   }
 
   /**
@@ -56,7 +57,8 @@ export class QuantiumTesting {
 
     // Look if any stage with the same stage name or order is already defined
     this._staging.forEach((value: Stage, key: string) => {
-      if (this._staging.get(key) || value.stageOrder === stage.stageOrder) {
+      const stageToCheck = this._staging.get(stage.stageName);
+      if (stageToCheck || value.stageOrder === stage.stageOrder) {
         stageToAdd = value;
       }
     });
@@ -73,6 +75,32 @@ export class QuantiumTesting {
     this._staging.set(stage.stageName, stage);
   }
 
+  /**
+   * Runs a specific stage by name
+   * @param stageName The name of the stage to run
+   * @param remove if the stage should be removed after it has run
+   */
+  public runStage(stageName: string, remove = false): void {
+    const stage = this._staging.get(stageName);
+    if (!stage) {
+      throw new StagingError(StageError.STAGE_NOT_FOUND);
+    }
+    stage.action();
+    if (remove) {
+      this._staging.delete(stage.stageName);
+    }
+  }
+
+  /**
+   * Runs all stages by the order defined
+   */
+  public runStaging(): void {
+    const stageActions: Stage[] = [];
+    this._staging.forEach((value) => stageActions.push(value)); // push to stage array
+    // Sort array by order
+    stageActions.sort((stage1, stage2) => stage1.stageOrder - stage2.stageOrder);
+    stageActions.forEach(stage => stage.action());
+  }
 
   private generateObject<T>(): T {
     const obj = {};
