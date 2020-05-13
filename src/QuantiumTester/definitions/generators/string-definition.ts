@@ -3,7 +3,9 @@ import { StringDefinitionValue } from '../../QuantiumTester';
 import { Seedable } from '../seedable';
 import { IGenerator } from './IGenerator';
 
-export class StringDefinition extends Seedable implements IGenerator{
+export class StringDefinition extends Seedable implements IGenerator {
+  generatedValue: string | number;
+
   private _definitions: StringDefinitionValue[] | string[] = [];
   private _length: number;
   private _custom: boolean;
@@ -23,13 +25,19 @@ export class StringDefinition extends Seedable implements IGenerator{
 
   /**
    * Generates a string based on the String definition provided
-   * @param length the length of the string
-   * @param chars the {@link StringDefinitionValue} to use
+   * @param regenerateIfExists Weather to re generate the value if it has already been generated
    */
-  public generate = (): string => {
+  public generate = (regenerateIfExists = false): string => {
     if (!this._definitions) {
       throw new StringDefError();
     }
+
+    if (!regenerateIfExists) {
+      if (this.generatedValue) {
+        return this.generatedValue.toString();
+      }
+    }
+
     let mask = '';
 
     if (this._custom) {
@@ -62,11 +70,12 @@ export class StringDefinition extends Seedable implements IGenerator{
       result += mask[Math.floor(this._chance.floating({min: 0, max: 1}) * mask.length)];
     }
 
+    this.generatedValue = result;
     return result;
   };
 
   private generateFromRandomFromProvidedStrings(): string {
-    return this._definitions[this._chance.integer({min: 0, max: this._definitions.length - 1})]
+    return this._definitions[this._chance.integer({min: 0, max: this._definitions.length - 1})];
   }
 
   get definitions(): StringDefinitionValue[] | string[] {
@@ -76,4 +85,5 @@ export class StringDefinition extends Seedable implements IGenerator{
   get length(): number {
     return this._length;
   }
+
 }

@@ -2,6 +2,8 @@ import { Seedable } from '../seedable';
 import { IGenerator } from './IGenerator';
 
 export class QRange extends Seedable implements IGenerator {
+  generatedValue: string | number;
+
   private _from: number;
   private _to: number;
   private _asInteger: boolean;
@@ -19,8 +21,15 @@ export class QRange extends Seedable implements IGenerator {
   /**
    * Returns a random value between the specified range
    */
-  generate(): number {
-    return this._chance.integer({min: this._from, max: this._to});
+  generate(regenerateIfExists = false): number {
+    if (!regenerateIfExists) {
+      if (this.generatedValue) {
+        return +this.generatedValue;
+      }
+    }
+    const generated = this._chance.integer({min: this._from, max: this._to});
+    this.generatedValue = generated;
+    return generated;
   }
 
   get from(): number {

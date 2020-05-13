@@ -1,3 +1,4 @@
 export interface IGenerator {
-  generate(): string | number;
+  generatedValue: string | number;
+  generate(regenerateIfExists: boolean): string | number;
 }
