@@ -22,12 +22,16 @@ export class TestValidator {
     return this;
   }
 
-  public get handleValidation(): boolean {
-    return this._handleValidation;
+  public set matchCase(value: TestValidatorActions) {
+    this._matchCase = value;
   }
 
-  get matchCase(): TestValidatorActions {
+  public get matchCase(): TestValidatorActions {
     return this._matchCase;
+  }
+
+  public get handleValidation(): boolean {
+    return this._handleValidation;
   }
 }
 

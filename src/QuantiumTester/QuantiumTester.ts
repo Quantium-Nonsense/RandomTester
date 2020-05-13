@@ -1,16 +1,15 @@
-import { Chance } from 'chance';
 import { QRange } from './definitions/generators/range';
-import { Stage } from './definitions/Stage';
 import { StringDefinition } from './definitions/generators/string-definition';
-import { AssertionError } from './errors/assertion.error';
+import { Stage } from './definitions/Stage';
 import { KeyError } from './errors/key-error';
 import { StageError, StagingError } from './errors/staging.error';
 import { TestValidator, TestValidatorActions } from './test-validator/test-validator';
+import { Chance } from 'chance';
 
 export class QuantiumTesting {
-  private _failedAssertions: { expected: any; actual: any; info: { seed: number } }[];
+  private _failedAssertions: { expected: any; actual: any; info: { seed: number } }[] = [];
   private readonly _object: { [key: string]: any };
-  private readonly _chance: Chance.Chance;
+  private readonly _chance;
   /**
    * The key of the property that will go through testing
    */
@@ -33,10 +32,11 @@ export class QuantiumTesting {
       console.warn(`QuantiumTesting: Seed not specified using seed ${ seed }`);
     }
     this._object = {};
-    this._chance = new Chance(seed);
+    this._chance = new Chance();
     this._staging = new Map<string, Stage>();
     this._validator = new TestValidator();
     this._exposedValues = new Map<string, any>();
+    this._failedAssertions = [];
 
   }
 
@@ -191,17 +191,13 @@ export class QuantiumTesting {
     return this._validator;
   }
 
-  public runValidationAsStage(stageName: string) {
-    this._validator.setHandleValidation(false, stageName);
+  public setValidationRules(validationRule: TestValidatorActions) {
+    this._validator.matchCase = validationRule;
   }
 
-  public validateFor(quantity: number) {
+  get failedAssertions(): { expected: any; actual: any; info: { seed: number } }[] {
+    return this._failedAssertions;
   }
-
-  assert(): void {
-
-  }
-
 
   private generateObject<T>(): T {
     const obj = {};

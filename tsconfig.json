@@ -19,7 +19,8 @@
     ]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "../../AppData/Roaming/JetBrains/WebStorm2020.1/javascript/nodejs/12.13.0/node-typings/node_modules/@types/node/globals.d.ts"
   ],
   "exclude": ["node_modules", "**/__tests__/*"]
 }
