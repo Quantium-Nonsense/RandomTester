@@ -90,25 +90,27 @@ export class QuantiumTesting {
     this._staging.set(stage.stageName, stage);
   }
 
-  public assertExposed(actual, expected, isInnerValue: boolean): boolean {
-    switch (this._validator.matchCase) {
-      case TestValidatorActions.MATCH_EXACTLY:
-        if (typeof actual !== 'object' && typeof actual !== 'function') {
-          const value = isInnerValue ? this._object[expected].generate() : expected;
-          if (actual === expected) {
-            return true;
-          } else {
-            this._failedAssertions.push({
-              actual,
-              expected,
-              info: {
-                seed: Number(this._chance.seed)
-              }
-            })
-            throw new AssertionError();
+  public assertExposed(actual, expected, isInnerValue: boolean, assertionQuantity: number): boolean {
+    for (let i = 0; i < assertionQuantity; i++) {
+      this.runStaging();
+      switch (this._validator.matchCase) {
+        case TestValidatorActions.MATCH_EXACTLY:
+          if (typeof actual !== 'object' && typeof actual !== 'function') {
+            const value = isInnerValue ? this._object[expected].generate() : expected;
+            if (actual !== expected) {
+              this._failedAssertions.push({
+                actual,
+                expected,
+                info: {
+                  seed: Number(this._chance.seed)
+                }
+              });
+            }
           }
-        }
+      }
+
     }
+    return this._failedAssertions.length === 0;
   }
 
   /**
@@ -165,11 +167,14 @@ export class QuantiumTesting {
    * Runs all stages by the order defined
    */
   public runStaging(): void {
-    const stageActions: Stage[] = [];
-    this._staging.forEach((value) => stageActions.push(value)); // push to stage array
-    // Sort array by order
-    stageActions.sort((stage1, stage2) => stage1.stageOrder - stage2.stageOrder);
-    stageActions.forEach(stage => stage.action());
+    const stages: Stage[] = [];
+    this._staging.forEach((value, key) => {
+      stages.push(value);
+    });
+    stages.sort((s1, s2) => s1.stageOrder - s2.stageOrder);
+    stages.forEach(s => {
+      this.runStage(s.stageName, false, s.withInnerProps);
+    });
   }
 
   /**
