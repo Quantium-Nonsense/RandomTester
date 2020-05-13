@@ -103,6 +103,9 @@ export class QuantiumTesting {
         if (typeof actual !== 'object' && typeof actual !== 'function') {
           const expectedValue = isInnerValue ? this._object[expected].generate() : expected;
           const actualValue = this._exposedValues.get(actual);
+          if (this._verbose) {
+            this.printLog(expectedValue, actual);
+          }
           if (actualValue !== expectedValue) {
             this._failedAssertions.push({
               actual: actualValue,
@@ -319,6 +322,10 @@ export class QuantiumTesting {
     return obj as T;
   }
 
+  private printLog(expected, actual) {
+    console.log(`Expected: ${ expected }\nActual: ${ actual }`);
+  }
+
 }
 
 export enum StringDefinitionValue {
@@ -341,5 +348,6 @@ export enum StringDefinitionValue {
   /**
    * Indicate inclusion of all characters
    */
-  ALL = 'ALL'
+  ALL = 'ALL',
+  NOT_EMPTY = 'NOT_EMPTY'
 }

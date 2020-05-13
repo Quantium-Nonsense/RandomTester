@@ -32,6 +32,18 @@ export class StringDefinition extends Seedable implements IGenerator {
       throw new StringDefError();
     }
 
+    let result = '';
+    const randomLength = this._chance.integer({min: 0, max: this._length});
+
+    // If NOT_EMPTY Flag is not set include special js 'empty' Cases
+    if (!this._definitions.includes(StringDefinitionValue.NOT_EMPTY)) {
+      const specialCaseChance = (1 / randomLength) * 100;
+      if (this._chance.integer({min: 0, max: 100}) <= specialCaseChance) {
+        result = this._chance.pickone([null, undefined, 'null', 'undefined', {}, []]);
+        this.generatedValue = result;
+      }
+    }
+
     if (!regenerateIfExists) {
       if (this.generatedValue) {
         return this.generatedValue.toString();
@@ -64,15 +76,8 @@ export class StringDefinition extends Seedable implements IGenerator {
       mask += '~`!@#$%^&*()_+-={}[]:";\'<>?,./|\\';
     }
 
-    let result = '';
 
     // Allow to return just ''
-    const randomLength = this._chance.integer({min: 0, max: this._length});
-    const specialCaseChance = (1 / randomLength) * 100;
-    if (this._chance.integer({min:0, max: 100}) <= specialCaseChance) {
-      result = this._chance.pickone([null, undefined, 'null', 'undefined', {}, []]);
-      this.generatedValue = result
-    }
     for (let i = randomLength; i > 0; i -= 1) {
       result += mask[Math.floor(this._chance.floating({min: 0, max: 1}) * mask.length)];
     }
