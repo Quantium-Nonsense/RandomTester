@@ -34,7 +34,7 @@ export class QuantiumTesting {
     }
     this._verbose = verbose;
     this._object = {};
-    this._chance = new Chance();
+    this._chance = new Chance(seed);
     this._staging = new Map<string, Stage>();
     this._validator = new TestValidator();
     this._exposedValues = new Map<string, any>();
@@ -94,7 +94,7 @@ export class QuantiumTesting {
 
   public async withAsyncAssertExposed(actual, expected, isInnerValue: boolean, assertionQuantity: number): Promise<boolean> {
     if (this._verbose) {
-      console.log(`Assertion no: ${ assertionQuantity }`);
+      console.log(`QuantiumTesting: Assertion no: ${ assertionQuantity }`);
     }
 
     await this.withAsyncRunStagging(this.getSortedStages());
@@ -104,7 +104,7 @@ export class QuantiumTesting {
           const expectedValue = isInnerValue ? this._object[expected].generate() : expected;
           const actualValue = this._exposedValues.get(actual);
           if (this._verbose) {
-            this.printLog(expectedValue, actual);
+            this.printLog(expectedValue, actualValue);
           }
           if (actualValue !== expectedValue) {
             this._failedAssertions.push({
@@ -127,7 +127,7 @@ export class QuantiumTesting {
 
   public assertExposed(actual, expected, isInnerValue: boolean, assertionQuantity: number): boolean {
     if (this._verbose) {
-      console.log(`Assertion no: ${ assertionQuantity }`);
+      console.log(`QuantiumTesting: Assertion no: ${ assertionQuantity }`);
     }
     this.runStaging(this.getSortedStages());
     switch (this._validator.matchCase) {
@@ -171,16 +171,16 @@ export class QuantiumTesting {
     });
 
     if (valueToAdd) {
-      if (this._verbose) {
-        console.log('exposed value found deleting and adding....');
-      }
+      /*   if (this._verbose) {
+       //console.log('exposed value found deleting and adding....');
+       }*/
       this._exposedValues.delete(name);
       this._exposedValues.set(name, value);
     } else {
-      if (this._verbose) {
-        console.log('exposed value not found adding....');
-        console.log(`Value to add ${ value } with name ${ name }`);
-      }
+      /*  if (this._verbose) {
+       console.log('exposed value not found adding....');
+       console.log(`Value to add ${ value } with name ${ name }`);
+       }*/
       this._exposedValues.set(name, value);
     }
   }
@@ -268,7 +268,7 @@ export class QuantiumTesting {
   private runStaging(stages: Stage[]): void {
     const toExecute: Stage[] = [...stages];
     if (this._verbose) {
-      console.log(`Stages to execute no: ${ toExecute.length }`);
+      console.log(`QuantiumTesting: Stages to execute no: ${ toExecute.length }`);
     }
     this.runStage(toExecute[0].stageName, false, toExecute[0].withInnerProps);
     toExecute.reverse().pop();
@@ -286,7 +286,7 @@ export class QuantiumTesting {
   private async withAsyncRunStagging(stages: Stage[]): Promise<void> {
     const toExecute: Stage[] = [...stages];
     if (this._verbose) {
-      console.log(`Stages to execute no: ${ toExecute.length }`);
+      console.log(`QuantiumTesting: Stages to execute no: ${ toExecute.length }`);
     }
     await this.withAsyncRunStage(toExecute[0].stageName, false, toExecute[0].withInnerProps);
     toExecute.reverse().pop();
@@ -322,8 +322,13 @@ export class QuantiumTesting {
     return obj as T;
   }
 
+  /**
+   * Prints a simple log
+   * @param expected
+   * @param actual
+   */
   private printLog(expected, actual) {
-    console.log(`Expected: ${ expected }\nActual: ${ actual }`);
+    console.log(`QuantiumTesting: Expected: ${ expected }\nActual: ${ actual }`);
   }
 
 }
@@ -349,5 +354,8 @@ export enum StringDefinitionValue {
    * Indicate inclusion of all characters
    */
   ALL = 'ALL',
+  /**
+   * Prevent javascript empty objects
+   */
   NOT_EMPTY = 'NOT_EMPTY'
 }

@@ -7,7 +7,7 @@ export class StringDefinition extends Seedable implements IGenerator {
   generatedValue: string | number;
 
   private _definitions: StringDefinitionValue[] | string[] = [];
-  private _length: number;
+  private _length: number | {from: number; to: number};
   private _custom: boolean;
 
   /**
@@ -16,7 +16,7 @@ export class StringDefinition extends Seedable implements IGenerator {
    * @param length The length of the random generated strings - Doesnt matter if custom is set to true
    * @param custom If the user wants to provide custom strings to generate from
    */
-  constructor(defs: StringDefinitionValue[] | string[], length: number = null, custom = false) {
+  constructor(defs: StringDefinitionValue[] | string[], length: number | {from: number; to: number} = null, custom = false) {
     super();
     this._definitions = defs;
     this._length = length;
@@ -33,13 +33,20 @@ export class StringDefinition extends Seedable implements IGenerator {
     }
 
     let result = '';
-    const randomLength = this._chance.integer({min: 0, max: this._length});
+    let randomLength;
+    if (typeof this._length === 'object') {
+      randomLength = this._chance.integer({
+        min: this._length.from, max: this._length.to
+      });
+    } else {
+      randomLength = +this._length;
+    }
 
     // If NOT_EMPTY Flag is not set include special js 'empty' Cases
     if (!this._definitions.includes(StringDefinitionValue.NOT_EMPTY)) {
       const specialCaseChance = (1 / randomLength) * 100;
       if (this._chance.integer({min: 0, max: 100}) <= specialCaseChance) {
-        result = this._chance.pickone([null, undefined, 'null', 'undefined', {}, []]);
+        result = this._chance.pickone([null, undefined, 'null', 'undefined', {}, [], '']);
         this.generatedValue = result;
       }
     }
@@ -94,7 +101,7 @@ export class StringDefinition extends Seedable implements IGenerator {
     return this._definitions;
   }
 
-  get length(): number {
+  get length(): number | {from: number; to: number} {
     return this._length;
   }
 
