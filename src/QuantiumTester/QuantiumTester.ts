@@ -2,13 +2,15 @@ import { Chance } from 'chance';
 import { QRange } from './definitions/generators/range';
 import { Stage } from './definitions/Stage';
 import { StringDefinition } from './definitions/generators/string-definition';
+import { AssertionError } from './errors/assertion.error';
 import { KeyError } from './errors/key-error';
 import { StageError, StagingError } from './errors/staging.error';
-import { TestValidator } from './test-validator/test-validator';
+import { TestValidator, TestValidatorActions } from './test-validator/test-validator';
 
 export class QuantiumTesting {
+  private _failedAssertions: { expected: any; actual: any; info: { seed: number } }[];
   private readonly _object: { [key: string]: any };
-  private readonly _chance;
+  private readonly _chance: Chance.Chance;
   /**
    * The key of the property that will go through testing
    */
@@ -23,6 +25,7 @@ export class QuantiumTesting {
    * on end run tests
    */
   private readonly _staging: Map<string, Stage>;
+  private readonly _exposedValues: Map<string, any>;
 
   constructor(seed?: number) {
     if (!seed) {
@@ -33,6 +36,7 @@ export class QuantiumTesting {
     this._chance = new Chance(seed);
     this._staging = new Map<string, Stage>();
     this._validator = new TestValidator();
+    this._exposedValues = new Map<string, any>();
 
   }
 
@@ -84,6 +88,50 @@ export class QuantiumTesting {
       this._staging.set(stage.stageName, stage);
     }
     this._staging.set(stage.stageName, stage);
+  }
+
+  public assertExposed(actual, expected, isInnerValue: boolean): boolean {
+    switch (this._validator.matchCase) {
+      case TestValidatorActions.MATCH_EXACTLY:
+        if (typeof actual !== 'object' && typeof actual !== 'function') {
+          const value = isInnerValue ? this._object[expected].generate() : expected;
+          if (actual === expected) {
+            return true;
+          } else {
+            this._failedAssertions.push({
+              actual,
+              expected,
+              info: {
+                seed: Number(this._chance.seed)
+              }
+            })
+            throw new AssertionError();
+          }
+        }
+    }
+  }
+
+  /**
+   * Will set a value as exposed, this means the inner class can access it so it can assert it
+   * @param value The value to expose
+   * @param name The name of the value
+   */
+  public expose(value, name: string): void {
+    let valueToAdd: any;
+
+    this._exposedValues.forEach((val, key) => {
+      const toCheck = this._exposedValues.get(name);
+      if (toCheck) {
+        valueToAdd = val;
+      }
+    });
+
+    if (valueToAdd) {
+      this._exposedValues.delete(name);
+      this._exposedValues.set(name, value);
+    } else {
+      this._exposedValues.set(name, value);
+    }
   }
 
   /**

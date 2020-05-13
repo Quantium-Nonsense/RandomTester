@@ -25,6 +25,10 @@ export class TestValidator {
   public get handleValidation(): boolean {
     return this._handleValidation;
   }
+
+  get matchCase(): TestValidatorActions {
+    return this._matchCase;
+  }
 }
 
 export enum TestValidatorActions {

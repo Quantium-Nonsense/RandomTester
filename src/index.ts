@@ -2,3 +2,8 @@
 export { QuantiumTesting, StringDefinitionValue } from './QuantiumTester/QuantiumTester';
 export { QRange } from './QuantiumTester/definitions/generators/range';
 export { RangeError } from './QuantiumTester/errors/range.error';
+export { KeyError } from './QuantiumTester/errors/key-error';
+export { StagingError, StageError } from './QuantiumTester/errors/staging.error';
+export { StringDefError } from './QuantiumTester/errors/string-def.error';
+export { StringDefinition } from './QuantiumTester/definitions/generators/string-definition';
+export { Stage } from './QuantiumTester/definitions/Stage';
