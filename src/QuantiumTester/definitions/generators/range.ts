@@ -32,7 +32,7 @@ export class QRange extends Seedable implements IGenerator {
     let generated;
 
     if (this._allowNullable && this._chance.integer({min: 0, max: 100}) <= 5) { // 5% chance of triggering
-      generated = this._chance.pickone([null, undefined]);
+      generated = this._chance.pickone([null, undefined, NaN]);
       this.generatedValue = generated;
     }
     generated = this._asInteger ? this._chance.integer({

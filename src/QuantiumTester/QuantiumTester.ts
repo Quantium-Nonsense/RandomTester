@@ -4,7 +4,8 @@ import { Stage } from './definitions/Stage';
 import { KeyError } from './errors/key-error';
 import { StageError, StagingError } from './errors/staging.error';
 import { TestValidator, TestValidatorActions } from './test-validator/test-validator';
-import { Chance } from 'chance';
+// @ts-ignore
+const Chance = require('chance');
 
 export class QuantiumTesting {
   private _failedAssertions: { expected: any; actual: any; info: { seed: number } }[] = [];
