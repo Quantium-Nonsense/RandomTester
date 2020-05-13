@@ -7,8 +7,9 @@ export class QRange extends Seedable implements IGenerator {
   private _from: number;
   private _to: number;
   private _asInteger: boolean;
+  private _allowNullable: boolean;
 
-  constructor(from: number, to: number, asInteger = false) {
+  constructor(from: number, to: number, asInteger = false, allowNullable = false) {
     super();
     if (from > to) {
       throw new RangeError();
@@ -16,6 +17,7 @@ export class QRange extends Seedable implements IGenerator {
     this._from = from;
     this._to = to;
     this._asInteger = asInteger;
+    this._allowNullable = allowNullable;
   }
 
   /**
@@ -27,7 +29,19 @@ export class QRange extends Seedable implements IGenerator {
         return +this.generatedValue;
       }
     }
-    const generated = this._chance.integer({min: this._from, max: this._to});
+    let generated;
+
+    if (this._allowNullable && this._chance.integer({min: 0, max: 100}) <= 5) { // 5% chance of triggering
+      generated = this._chance.pickone([null, undefined]);
+      this.generatedValue = generated;
+    }
+    generated = this._asInteger ? this._chance.integer({
+      min: this._from,
+      max: this._to
+    }) : this._chance.floating({
+      min: this._from,
+      max: this._to
+    });
     this.generatedValue = generated;
     return generated;
   }
