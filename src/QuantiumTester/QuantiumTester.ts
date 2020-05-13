@@ -3,7 +3,9 @@ import { StringDefinition } from './definitions/generators/string-definition';
 import { Stage } from './definitions/Stage';
 import { KeyError } from './errors/key-error';
 import { StageError, StagingError } from './errors/staging.error';
+import { Infer } from './object-creators/Infer';
 import { TestValidator, TestValidatorActions } from './test-validator/test-validator';
+// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
 // @ts-ignore
 const Chance = require('chance');
 
@@ -41,6 +43,18 @@ export class QuantiumTesting {
     this._exposedValues = new Map<string, any>();
     this._failedAssertions = [];
 
+  }
+
+  /**
+   * Creates an inner object by infering the types of the passed object
+   * NOTE: THE CLASS MUST BE INSTANTIATED WITH NON NULL VALUES
+   * All null values will be set as string definition
+   */
+  public inferAndCreateInner(objectToInfer) {
+    const innerObj = Infer.object(objectToInfer, this._verbose);
+    Object.keys(innerObj).forEach(key => {
+      this._object[key] = innerObj[key];
+    });
   }
 
   /**
@@ -202,6 +216,13 @@ export class QuantiumTesting {
 
   public setValidationRules(validationRule: TestValidatorActions) {
     this._validator.matchCase = validationRule;
+  }
+
+  /**
+   * ONLY FOR DEVELOPMENT DO NOT USE THIS
+   */
+  public getInner() {
+    return this._object;
   }
 
   get failedAssertions(): { expected: any; actual: any; info: { seed: number } }[] {
