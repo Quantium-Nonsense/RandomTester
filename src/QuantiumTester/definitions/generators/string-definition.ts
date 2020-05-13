@@ -66,7 +66,14 @@ export class StringDefinition extends Seedable implements IGenerator {
 
     let result = '';
 
-    for (let i = this._length; i > 0; i -= 1) {
+    // Allow to return just ''
+    const randomLength = this._chance.integer({min: 0, max: this._length});
+    const specialCaseChance = (1 / randomLength) * 100;
+    if (this._chance.integer({min:0, max: 100}) <= specialCaseChance) {
+      result = this._chance.pickone([null, undefined, 'null', 'undefined', {}, []]);
+      this.generatedValue = result
+    }
+    for (let i = randomLength; i > 0; i -= 1) {
       result += mask[Math.floor(this._chance.floating({min: 0, max: 1}) * mask.length)];
     }
 
