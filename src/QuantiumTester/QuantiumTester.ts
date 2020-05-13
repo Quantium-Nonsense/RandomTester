@@ -26,7 +26,7 @@ export class QuantiumTesting {
   private readonly _staging: Map<string, Stage>;
   private readonly _exposedValues: Map<string, any>;
 
-  constructor(seed?: number) {
+  constructor(seed?: number, verbose = false) {
     if (!seed) {
       seed = Math.round(Math.random() * (Math.random() * 153000));
       console.warn(`QuantiumTesting: Seed not specified using seed ${ seed }`);
@@ -90,21 +90,50 @@ export class QuantiumTesting {
     this._staging.set(stage.stageName, stage);
   }
 
+  public async withAsyncAssertExposed(actual, expected, isInnerValue: boolean, assertionQuantity: number): Promise<boolean> {
+    if (assertionQuantity === 0) {
+      return this._failedAssertions.length === 0;
+    }
+    while (assertionQuantity >= 0) {
+      await this.withAsyncRunStagging();
+      switch (this._validator.matchCase) {
+        case TestValidatorActions.MATCH_EXACTLY:
+          if (typeof actual !== 'object' && typeof actual !== 'function') {
+            const expectedValue = isInnerValue ? this._object[expected].generate() : expected;
+            const actualValue = this._exposedValues.get(actual);
+            if (actualValue !== expectedValue) {
+              this._failedAssertions.push({
+                actual: actualValue,
+                expected: expectedValue,
+                info: {
+                  seed: Number(this._chance.seed)
+                }
+              });
+              console.log(this._failedAssertions[this.failedAssertions.length - 1]);
+            }
+          }
+      }
+      await this.withAsyncAssertExposed(actual, expected, isInnerValue, assertionQuantity - 1);
+    }
+  }
+
   public assertExposed(actual, expected, isInnerValue: boolean, assertionQuantity: number): boolean {
     for (let i = 0; i < assertionQuantity; i++) {
       this.runStaging();
       switch (this._validator.matchCase) {
         case TestValidatorActions.MATCH_EXACTLY:
           if (typeof actual !== 'object' && typeof actual !== 'function') {
-            const value = isInnerValue ? this._object[expected].generate() : expected;
-            if (actual !== expected) {
+            const expectedValue = isInnerValue ? this._object[expected].generate() : expected;
+            const actualValue = this._exposedValues.get(actual);
+            if (actualValue !== expectedValue) {
               this._failedAssertions.push({
-                actual,
-                expected,
+                actual: actualValue,
+                expected: expectedValue,
                 info: {
                   seed: Number(this._chance.seed)
                 }
               });
+              console.log(this._failedAssertions[this.failedAssertions.length - 1]);
             }
           }
       }
@@ -129,10 +158,34 @@ export class QuantiumTesting {
     });
 
     if (valueToAdd) {
+      console.log('exposed value found deleting and adding....');
       this._exposedValues.delete(name);
       this._exposedValues.set(name, value);
     } else {
+      console.log('exposed value not found adding....');
+      console.log(`Value to add ${ value } with name ${ name }`);
       this._exposedValues.set(name, value);
+    }
+  }
+
+  async withAsyncStage(stageName: string, remove = false, withInnerProps: string[] = null): Promise<void> {
+    const stage = this._staging.get(stageName);
+    if (!stage) {
+      throw new StagingError(StageError.STAGE_NOT_FOUND);
+    }
+    if (withInnerProps) {
+      const propsList = [];
+      withInnerProps.forEach(prop => {
+        if (this._object.hasOwnProperty(prop)) {
+          propsList.push(this._object[prop].generate());
+        }
+      });
+      await stage.action(...propsList);
+    } else {
+      await stage.action();
+    }
+    if (remove) {
+      this._staging.delete(stage.stageName);
     }
   }
 
@@ -175,6 +228,23 @@ export class QuantiumTesting {
     stages.forEach(s => {
       this.runStage(s.stageName, false, s.withInnerProps);
     });
+  }
+
+  async withAsyncRunStagging(stages: Stage[] = []): Promise<void> {
+    stages = stages ? stages : [];
+    if (!stages) {
+      this._staging.forEach((value, key) => {
+        stages.push(value);
+      });
+    }
+    stages.sort((s1, s2) => s1.stageOrder - s2.stageOrder);
+    await this.withAsyncStage(stages[0].stageName, false, stages[0].withInnerProps);
+    stages.reverse().pop();
+    stages.reverse();
+    if (stages.length > 0) {
+      await this.withAsyncRunStagging(stages);
+    }
+    return;
   }
 
   /**

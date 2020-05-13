@@ -1,13 +1,14 @@
 {
   "name": "quantium_testing",
-  "version": "0.0.16",
+  "version": "0.0.23a",
   "description": "Random testing creator",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
     "format": "eslint **/*.ts",
-    "version": "npm run format && git add -A src"
+    "version": "npm run format && git add -A src",
+    "build:publish": "npm run build && npm publish"
   },
   "dependencies": {
     "chance": "^1.1.5",
