@@ -95,7 +95,7 @@ export class QuantiumTesting {
       return this._failedAssertions.length === 0;
     }
     while (assertionQuantity >= 0) {
-      await this.withAsyncRunStagging();
+      await this.withAsyncRunStagging(this.getSortedStages());
       switch (this._validator.matchCase) {
         case TestValidatorActions.MATCH_EXACTLY:
           if (typeof actual !== 'object' && typeof actual !== 'function') {
@@ -230,22 +230,17 @@ export class QuantiumTesting {
     });
   }
 
-  async withAsyncRunStagging(stages: Stage[] = []): Promise<void> {
-    stages = stages ? stages : [];
-    if (!stages) {
-      this._staging.forEach((value, key) => {
-        stages.push(value);
-      });
-    }
-    stages.sort((s1, s2) => s1.stageOrder - s2.stageOrder);
-    await this.withAsyncStage(stages[0].stageName, false, stages[0].withInnerProps);
-    stages.reverse().pop();
-    stages.reverse();
-    if (stages.length > 0) {
-      await this.withAsyncRunStagging(stages);
+  async withAsyncRunStagging(stages: Stage[]): Promise<void> {
+    const toExecute: Stage[] = [...stages]
+    await this.withAsyncStage(toExecute[0].stageName, false, toExecute[0].withInnerProps);
+    toExecute.reverse().pop();
+    toExecute.reverse();
+    if (toExecute.length > 0) {
+      await this.withAsyncRunStagging(toExecute);
     }
     return;
   }
+
 
   /**
    * Set the parameter that will be tested
@@ -267,6 +262,15 @@ export class QuantiumTesting {
 
   get failedAssertions(): { expected: any; actual: any; info: { seed: number } }[] {
     return this._failedAssertions;
+  }
+
+  private getSortedStages(): Stage[] {
+    const stages = [];
+    this._staging.forEach((value, key) => {
+      stages.push(value);
+    });
+    stages.sort((s1, s2) => s1.stageOrder - s2.stageOrder);
+    return stages;
   }
 
   private generateObject<T>(): T {
