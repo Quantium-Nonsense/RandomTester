@@ -52,5 +52,25 @@ const advanceDemo = (): void => {
   q.runStage('Stage 1', false, ['logValue', 'errorVal']);
 };
 
+// noinspection DuplicatedCode
+const testDemo = (): void => {
+  const q = new QuantiumTesting();
+  q.setProperty('logValue', new StringDefinition([
+    StringDefinitionValue.LOWER_LETTERS,
+    StringDefinitionValue.NUMERIC
+  ], 35));
+  q.setProperty('errorVal', new StringDefinition([
+    StringDefinitionValue.UPPER_CASE_LETTERS,
+    StringDefinitionValue.SPECIAL_CHARS
+  ], 35));
+
+  const f = (v, c): void => {
+    console.log(`Hello from ${ v } and ${ c }!`);
+  };
+  q.setStaging(new Stage('Stage 1', (value1, value2) => f(value1, value2)));
+  q.runStage('Stage 1', false, ['logValue', 'errorVal']);
+  q.assert();
+};
+
 simpleDemo();
 advanceDemo();

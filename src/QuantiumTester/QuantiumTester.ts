@@ -2,11 +2,19 @@ import { Chance } from 'chance';
 import { QRange } from './definitions/generators/range';
 import { Stage } from './definitions/Stage';
 import { StringDefinition } from './definitions/generators/string-definition';
+import { KeyError } from './errors/key-error';
 import { StageError, StagingError } from './errors/staging.error';
+import { TestValidator } from './test-validator/test-validator';
 
 export class QuantiumTesting {
   private readonly _object: { [key: string]: any };
   private readonly _chance;
+  /**
+   * The key of the property that will go through testing
+   */
+  private _validationProperty: string;
+  private _validator: TestValidator;
+
   /**
    * User should be allowed to store staging functions
    * i.e
@@ -24,6 +32,8 @@ export class QuantiumTesting {
     this._object = {};
     this._chance = new Chance(seed);
     this._staging = new Map<string, Stage>();
+    this._validator = new TestValidator();
+
   }
 
   /**
@@ -114,6 +124,32 @@ export class QuantiumTesting {
     stageActions.forEach(stage => stage.action());
   }
 
+  /**
+   * Set the parameter that will be tested
+   * @param key
+   * @returns Returns a configurable validator to set how the param will be tested
+   */
+  public paramToTest(key: string): TestValidator {
+    if (!this._object.hasOwnProperty(key)) {
+      throw new KeyError();
+    }
+    this._validationProperty = key;
+
+    return this._validator;
+  }
+
+  public runValidationAsStage(stageName: string) {
+    this._validator.setHandleValidation(false, stageName);
+  }
+
+  public validateFor(quantity: number) {
+  }
+
+  assert(): void {
+
+  }
+
+
   private generateObject<T>(): T {
     const obj = {};
     Object.keys(this._object).forEach(key => {
@@ -129,7 +165,6 @@ export class QuantiumTesting {
 
     return obj as T;
   }
-
 
 }
 
