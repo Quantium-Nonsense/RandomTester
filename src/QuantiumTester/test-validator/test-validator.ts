@@ -2,6 +2,7 @@ export class TestValidator {
   private _matchCase: TestValidatorActions;
   private _handleValidation: boolean;
   private _validationAsStage: string;
+  private _expectedFromFunction: boolean
 
   constructor() {
   }
@@ -10,6 +11,7 @@ export class TestValidator {
    * Delegates validation to a stage
    * @param shouldHandle
    * @param stageValidation
+   * @deprecated
    */
   public setHandleValidation(shouldHandle = true, stageValidation: string): TestValidator {
     this._handleValidation = shouldHandle;
@@ -28,9 +30,15 @@ export class TestValidator {
   public get handleValidation(): boolean {
     return this._handleValidation;
   }
+
+  set expectedFromFunction(value: boolean) {
+    this._expectedFromFunction = value;
+  }
 }
 
 export enum TestValidatorActions {
   MATCH_EXACTLY,
-  INCLUDE_VALUE
+  INCLUDE_VALUE,
+  DEEP_MATCH_EXACTLY,
+  EVALUATE_FUNCTION
 }

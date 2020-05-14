@@ -23,6 +23,7 @@ const demo1 = () => {
 type GetConstructorArgs<T> = T extends new (...args: infer U) => any ? U : never
 
 const inferDemo = () => {
+  // This test will fail
   // eslint-disable-next-line @typescript-eslint/class-name-casing
   class a {
     constructor(public a1: string = '', public b: string ='', public c: number = 1 , public e: number = null, private d: number = 0) {
@@ -35,8 +36,8 @@ const inferDemo = () => {
   }, ['alpha']))
   q.expose('myExposedVal', 'myExposedValName');
   q.assertExposed('myExposedValName', 'alpha.a1', true, 1);
-  console.log(q.getInnerActual('alpha', false))
-
+  console.log(q.getInnerAsValue('alpha', false))
+  console.log(q.failedAssertions);
 };
 
 inferDemo();

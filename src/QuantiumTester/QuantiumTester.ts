@@ -1,10 +1,13 @@
 import { QRange } from './definitions/generators/range';
 import { StringDefinition } from './definitions/generators/string-definition';
+import { PreparedFunction } from './definitions/prepared-function';
 import { Stage } from './definitions/Stage';
 import { KeyError } from './errors/key-error';
 import { StageError, StagingError } from './errors/staging.error';
 import { Infer } from './object-creators/Infer';
 import { TestValidator, TestValidatorActions } from './test-validator/test-validator';
+import * as _ from 'lodash';
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
 // @ts-ignore
 const Chance = require('chance');
@@ -29,6 +32,7 @@ export class QuantiumTesting {
   private readonly _staging: Map<string, Stage>;
   private readonly _exposedValues: Map<string, any>;
   private _verbose: boolean;
+  private _preparedFunction: PreparedFunction;
 
   constructor(seed?: number, verbose = false) {
     if (!seed) {
@@ -145,7 +149,7 @@ export class QuantiumTesting {
    * @param innerName
    * @param regenerate
    */
-  public getInnerActual(innerName: string, regenerate: boolean) {
+  public getInnerAsValue(innerName: string, regenerate: boolean) {
     // Check if dot notation object
     if (innerName.includes('.')) {
       // split into object and accessor
@@ -174,31 +178,34 @@ export class QuantiumTesting {
       console.log(`QuantiumTesting: Assertion no: ${ assertionQuantity }`);
     }
     this.runStaging(this.getSortedStages());
+
     switch (this._validator.matchCase) {
       case TestValidatorActions.MATCH_EXACTLY:
-        if (typeof actual !== 'object' && typeof actual !== 'function') {
+        if (typeof actual !== 'function') {
           // If we are comparing inner value it means its a generator value or generator object
           // return the appropriate plain value
-          const expectedValue = isInnerValue ? this.getInnerActual(expected, false) : expected;
+          const expectedValue = this.getExpectedValue(expected, isInnerValue);
           const actualValue = this._exposedValues.get(actual);
-          if (actualValue !== expectedValue) {
-            this._failedAssertions.push({
-              actual: actualValue,
-              expected: expectedValue,
-              info: {
-                seed: Number(this._chance.seed),
-                message: `Failed at evaluation ${ assertionQuantity }`
-              }
-            });
+          if (_.isEqual(actualValue, expectedValue)) {
+            this.logFailedAssertion(actualValue, expectedValue, assertionQuantity);
             console.log(this._failedAssertions[this.failedAssertions.length - 1]);
           }
         }
-        assertionQuantity -= 1;
-        if (assertionQuantity <= 0) {
-          return this._failedAssertions.length === 0;
-        }
-        this.assertExposed(actual, expected, isInnerValue, assertionQuantity);
+        break;
+      case TestValidatorActions.INCLUDE_VALUE:
+        break;
+      case TestValidatorActions.DEEP_MATCH_EXACTLY:
+        break;
+      case TestValidatorActions.EVALUATE_FUNCTION:
+        break;
+      default:
+        break;
     }
+    assertionQuantity -= 1;
+    if (assertionQuantity <= 0) {
+      return this._failedAssertions.length === 0;
+    }
+    this.assertExposed(actual, expected, isInnerValue, assertionQuantity);
     return this._failedAssertions.length === 0;
   }
 
@@ -261,10 +268,49 @@ export class QuantiumTesting {
     return this._failedAssertions;
   }
 
+  private getExpectedValue(expected, isInnerValue: boolean) {
+    let expectedValue;
+    if (expected instanceof PreparedFunction) {
+      expectedValue = expected.shouldExecuteWithInnerProps()
+          ? expected.executeWith(...this.getMultipleInnerByValue(expected.withInnerProps))
+          : expected.executeWith(...expected.props);
+    } else {
+      expectedValue = isInnerValue ? this.getInnerAsValue(expected, false) : expected;
+    }
+
+    return expectedValue;
+  }
+
+  private getMultipleInnerByValue(innerNames: string[]) {
+    const toReturn = [];
+    innerNames.forEach(name => {
+      toReturn.push(this.getInnerAsValue(name, false));
+    });
+    return toReturn;
+  }
+
   private setFallbackValidator() {
     if (!this._validator.matchCase) {
       this._validator.matchCase = TestValidatorActions.MATCH_EXACTLY;
     }
+  }
+
+  /**
+   * Pushes a failed assertion to the failed assertion list
+   * @param actualValue
+   * @param expectedValue
+   * @param assertionQuantity
+   */
+  private logFailedAssertion(actualValue, expectedValue, assertionQuantity: number) {
+    this._failedAssertions.push({
+      actual: actualValue,
+      expected: expectedValue,
+      info: {
+        seed: Number(this._chance.seed),
+        message: `Failed at evaluation ${ assertionQuantity }`
+      }
+    });
+
   }
 
   /**
@@ -311,7 +357,7 @@ export class QuantiumTesting {
       const propsList = []; // prop list to pass to action
       withInnerProps.forEach(prop => {
         if (this._object.hasOwnProperty(prop)) {
-          propsList.push(this.getInnerActual(prop, true));
+          propsList.push(this.getInnerAsValue(prop, true));
         }
       });
       stage.action(...propsList);
