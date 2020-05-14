@@ -145,34 +145,6 @@ export class QuantiumTesting {
     }
   }
 
-  /**
-   * If passed key represents a generator object this function will return a plain object
-   * Otherwise it will return the plain value
-   * @param innerName
-   * @param regenerate
-   */
-  public getInnerAsValue(innerName: string, regenerate: boolean, innerObject: any) {
-    // Check if dot notation object
-    if (innerName.includes('.')) {
-      // split into object and accessor
-      const notations = innerName.split('.');
-      if (notations.length > 2) {
-        throw new Error('Cannot go deeper than first level objects!');
-      }
-      const generatedObject = this.generateObject(notations[0], regenerate);
-      return generatedObject[notations[1]];
-    }
-
-    // If is generator return
-    if (this._object[innerName].hasOwnProperty('generate')) {
-      return this._object[innerName].generate(regenerate);
-    }
-
-    // If not generator it means its a generator object
-    // Then we need to turn the generator object into a plain object
-    return this.generateObject(innerName, regenerate);
-  }
-
   public assertExposed(actual, expected, isInnerValue: boolean, assertionQuantity: number): boolean {
     // If no validator has been defined fallback to match exactly validation
     this.setFallbackValidator();
