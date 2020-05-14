@@ -50,11 +50,21 @@ export class QuantiumTesting {
    * NOTE: THE CLASS MUST BE INSTANTIATED WITH NON NULL VALUES
    * All null values will be set as string definition
    */
-  public inferAndCreateInner(objectToInfer) {
+  public inferAndCreateInner(objectToInfer, asObjectName?: string) {
     const innerObj = Infer.object(objectToInfer, this._verbose);
-    Object.keys(innerObj).forEach(key => {
-      this._object[key] = innerObj[key];
-    });
+
+    // If the user desires to set the infered object as a sub object of the inner object
+    if (asObjectName) {
+      this._object[asObjectName] = {
+        ...innerObj
+      };
+    } else {
+      // Otherwise populate the inner object with keys inferred from object
+      Object.keys(innerObj).forEach(key => {
+        this._object[key] = innerObj[key];
+      });
+
+    }
   }
 
   /**
