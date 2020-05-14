@@ -1,6 +1,9 @@
 import { Stage } from './Stage';
 
-export class StageSingle extends Stage {
+/**
+ * Ensures that a stage will always run once in the entire lifecycle of the tests
+ */
+export class SingleStage extends Stage {
   private _hasRun: boolean;
 
   /**
