@@ -1,10 +1,16 @@
-import { PropsError } from '../errors/props.error';
+import { PropsError } from '../..';
 
 export class PreparedFunction {
+  /**
+   * Creates a prepared function for assertion
+   * @param _func The function to run during assertion
+   * @param _withInnerProps If the function should be passed some inner params
+   * @param _props Pass any props to the function
+   */
   constructor(
       private _func: (...args) => any,
-      private _withInnerProps: string[],
-      private _props: any
+      private _withInnerProps?: string[],
+      private _props?: any
   ) {
     if (this._props && this._withInnerProps) {
       throw new PropsError('Cannot declare both props and inner props');

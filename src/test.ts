@@ -1,5 +1,5 @@
 import { StringDefinition } from './QuantiumTester/definitions/generators/string-definition';
-import { Stage } from './QuantiumTester/definitions/Stage';
+import { Stage } from './QuantiumTester/definitions/stage/Stage';
 import { QuantiumTesting, StringDefinitionValue } from './QuantiumTester/QuantiumTester';
 import { TestValidatorActions } from './QuantiumTester/test-validator/test-validator';
 

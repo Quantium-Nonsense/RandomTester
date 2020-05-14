@@ -6,4 +6,6 @@ export { KeyError } from './QuantiumTester/errors/key-error';
 export { StagingError, StageError } from './QuantiumTester/errors/staging.error';
 export { StringDefError } from './QuantiumTester/errors/string-def.error';
 export { StringDefinition } from './QuantiumTester/definitions/generators/string-definition';
-export { Stage } from './QuantiumTester/definitions/Stage';
+export { Stage } from './QuantiumTester/definitions/stage/Stage';
+export { PreparedFunction } from './QuantiumTester/definitions/prepared-function';
+export {PropsError} from './QuantiumTester/errors/props.error';

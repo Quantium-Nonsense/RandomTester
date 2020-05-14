@@ -1,9 +1,10 @@
 import { QRange } from './definitions/generators/range';
 import { StringDefinition } from './definitions/generators/string-definition';
 import { PreparedFunction } from './definitions/prepared-function';
-import { Stage } from './definitions/Stage';
+import { Stage } from './definitions/stage/Stage';
 import { KeyError } from './errors/key-error';
 import { StageError, StagingError } from './errors/staging.error';
+import { LoggerModel } from './loggers/logger.model';
 import { Infer } from './object-creators/Infer';
 import { TestValidator, TestValidatorActions } from './test-validator/test-validator';
 import * as _ from 'lodash';
@@ -13,7 +14,7 @@ import * as _ from 'lodash';
 const Chance = require('chance');
 
 export class QuantiumTesting {
-  private _failedAssertions: { expected: any; actual: any; info: { seed: number; message: string } }[] = [];
+  private _failedAssertions: LoggerModel[] = [];
   private readonly _object: { [key: string]: any };
   private readonly _chance;
   /**
@@ -88,7 +89,7 @@ export class QuantiumTesting {
    */
   public setStaging(stage: Stage, override = false): void {
     let stageToAdd: Stage;
-
+    stage.object = this._object;
     // Look if any stage with the same stage name or order is already defined
     this._staging.forEach((value: Stage, key: string) => {
       const stageToCheck = this._staging.get(stage.stageName);
@@ -114,7 +115,7 @@ export class QuantiumTesting {
       console.log(`QuantiumTesting: Assertion no: ${ assertionQuantity }`);
     }
 
-    await this.withAsyncRunStagging(this.getSortedStages());
+    await this.runStagesAsync(this.getSortedStages());
     switch (this._validator.matchCase) {
       case TestValidatorActions.MATCH_EXACTLY:
         if (typeof actual !== 'object' && typeof actual !== 'function') {
@@ -177,7 +178,7 @@ export class QuantiumTesting {
     if (this._verbose) {
       console.log(`QuantiumTesting: Assertion no: ${ assertionQuantity }`);
     }
-    this.runStaging(this.getSortedStages());
+    this.runStages(this.getSortedStages());
 
     switch (this._validator.matchCase) {
       case TestValidatorActions.MATCH_EXACTLY:
@@ -193,10 +194,6 @@ export class QuantiumTesting {
         }
         break;
       case TestValidatorActions.INCLUDE_VALUE:
-        break;
-      case TestValidatorActions.DEEP_MATCH_EXACTLY:
-        break;
-      case TestValidatorActions.EVALUATE_FUNCTION:
         break;
       default:
         break;
@@ -320,21 +317,22 @@ export class QuantiumTesting {
    * @param remove if the stage should be removed after it has run
    * @param withInnerProps Run stage with a property generated in the object
    */
-  private async withAsyncRunStage(stageName: string, remove = false, withInnerProps: string[] = null): Promise<void> {
+  private async runStageAsync(stageName: string, remove = false): Promise<void> {
     const stage = this._staging.get(stageName);
     if (!stage) {
       throw new StagingError(StageError.STAGE_NOT_FOUND);
     }
-    if (withInnerProps) {
-      const propsList = [];
-      withInnerProps.forEach(prop => {
-        if (this._object.hasOwnProperty(prop)) {
-          propsList.push(this._object[prop].generate(true));
+    try {
+      await stage.runStageAsync();
+    } catch (e) {
+      this.failedAssertions.push({
+        expected: null,
+        actual: null,
+        info: {
+          seed: this._chance.seed,
+          message: `Failed at preparing Stage: ${ stageName } with error ${ (e as Error).message }`
         }
       });
-      await stage.action(...propsList);
-    } else {
-      await stage.action();
     }
     if (remove) {
       this._staging.delete(stage.stageName);
@@ -347,33 +345,22 @@ export class QuantiumTesting {
    * @param remove if the stage should be removed after it has run
    * @param withInnerProps Run stage with a property generated in the object
    */
-  private runStage(stageName: string, remove = false, withInnerProps: string[] = null): void {
+  private runStage(stageName: string, remove = false): void {
     const stage = this._staging.get(stageName);
     if (!stage) {
       throw new StagingError(StageError.STAGE_NOT_FOUND);
     }
-    // if inner props true we are looking for inner obj value
-    if (withInnerProps.length > 0) {
-      const propsList = []; // prop list to pass to action
-      withInnerProps.forEach(prop => {
-        if (this._object.hasOwnProperty(prop)) {
-          propsList.push(this.getInnerAsValue(prop, true));
+    try {
+      stage.runStage();
+    } catch (e) {
+      this.failedAssertions.push({
+        expected: null,
+        actual: null,
+        info: {
+          seed: this._chance.seed,
+          message: `Failed at preparing Stage: ${ stageName } with error ${ (e as Error).message }`
         }
       });
-      stage.action(...propsList);
-    } else {
-      try {
-        stage.action();
-      } catch (e) {
-        this.failedAssertions.push({
-          expected: null,
-          actual: null,
-          info: {
-            seed: this._chance.seed,
-            message: `Failed at preparing Stage: ${ stageName } with error ${ (e as Error).message }`
-          }
-        });
-      }
     }
     if (remove) {
       this._staging.delete(stage.stageName);
@@ -383,7 +370,7 @@ export class QuantiumTesting {
   /**
    * Runs all stages by the order defined
    */
-  private runStaging(stages: Stage[]): void {
+  private runStages(stages: Stage[]): void {
     const toExecute: Stage[] = [...stages];
     if (this._verbose) {
       console.log(`QuantiumTesting: Stages to execute no: ${ toExecute.length }`);
@@ -392,7 +379,7 @@ export class QuantiumTesting {
     toExecute.reverse().pop();
     toExecute.reverse();
     if (toExecute.length > 0) {
-      this.runStaging(toExecute);
+      this.runStages(toExecute);
     }
     return;
   }
@@ -401,16 +388,16 @@ export class QuantiumTesting {
    * @async
    * Runs all stages by the order defined allows for async actions in stage
    */
-  private async withAsyncRunStagging(stages: Stage[]): Promise<void> {
+  private async runStagesAsync(stages: Stage[]): Promise<void> {
     const toExecute: Stage[] = [...stages];
     if (this._verbose) {
       console.log(`QuantiumTesting: Stages to execute no: ${ toExecute.length }`);
     }
-    await this.withAsyncRunStage(toExecute[0].stageName, false, toExecute[0].withInnerProps);
+    await this.runStageAsync(toExecute[0].stageName, false, toExecute[0].withInnerProps);
     toExecute.reverse().pop();
     toExecute.reverse();
     if (toExecute.length > 0) {
-      await this.withAsyncRunStagging(toExecute);
+      await this.runStagesAsync(toExecute);
     }
     return;
   }

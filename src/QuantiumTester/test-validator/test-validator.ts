@@ -39,6 +39,4 @@ export class TestValidator {
 export enum TestValidatorActions {
   MATCH_EXACTLY,
   INCLUDE_VALUE,
-  DEEP_MATCH_EXACTLY,
-  EVALUATE_FUNCTION
 }
