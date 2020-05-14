@@ -1,5 +1,3 @@
-import { LoggerModel } from '../../loggers/logger.model';
-
 export class Stage {
   /**
    * This variable is set by the QuantiumTester.setStage

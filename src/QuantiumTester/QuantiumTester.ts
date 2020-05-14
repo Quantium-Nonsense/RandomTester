@@ -393,7 +393,7 @@ export class QuantiumTesting {
     if (this._verbose) {
       console.log(`QuantiumTesting: Stages to execute no: ${ toExecute.length }`);
     }
-    await this.runStageAsync(toExecute[0].stageName, false, toExecute[0].withInnerProps);
+    await this.runStageAsync(toExecute[0].stageName);
     toExecute.reverse().pop();
     toExecute.reverse();
     if (toExecute.length > 0) {
