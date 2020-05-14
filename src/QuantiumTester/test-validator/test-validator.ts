@@ -17,11 +17,6 @@ export class TestValidator {
     return this;
   }
 
-  public expectToMatchExact(): TestValidator {
-    this._matchCase = TestValidatorActions.MATCH_EXACTLY;
-    return this;
-  }
-
   public set matchCase(value: TestValidatorActions) {
     this._matchCase = value;
   }

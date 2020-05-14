@@ -10,7 +10,7 @@ import { TestValidator, TestValidatorActions } from './test-validator/test-valid
 const Chance = require('chance');
 
 export class QuantiumTesting {
-  private _failedAssertions: { expected: any; actual: any; info: { seed: number } }[] = [];
+  private _failedAssertions: { expected: any; actual: any; info: { seed: number; message: string } }[] = [];
   private readonly _object: { [key: string]: any };
   private readonly _chance;
   /**
@@ -51,7 +51,7 @@ export class QuantiumTesting {
    * All null values will be set as string definition
    */
   public inferAndCreateInner(objectToInfer, asObjectName?: string) {
-    const innerObj = Infer.object(objectToInfer, this._verbose);
+    const innerObj = Infer.object(objectToInfer, this._verbose, this._chance);
 
     // If the user desires to set the infered object as a sub object of the inner object
     if (asObjectName) {
@@ -75,18 +75,6 @@ export class QuantiumTesting {
   public setProperty(name, val: QRange | StringDefinition) {
     val.chance = this._chance;
     this._object[name] = val;
-  }
-
-  /**
-   * Generates objects specified by the generics provided
-   * @param quantity How many objects to create default 1
-   */
-  public generateObjects<T>(quantity = 1): T[] {
-    const obj: T[] = [];
-    for (let i = 0; i < quantity; i++) {
-      obj.push(this.generateObject<T>());
-    }
-    return obj;
   }
 
   /**
@@ -136,7 +124,8 @@ export class QuantiumTesting {
               actual: actualValue,
               expected: expectedValue,
               info: {
-                seed: Number(this._chance.seed)
+                seed: Number(this._chance.seed),
+                message: 'Failed at evaluation'
               }
             });
             console.log(this._failedAssertions[this.failedAssertions.length - 1]);
@@ -150,7 +139,37 @@ export class QuantiumTesting {
     }
   }
 
+  /**
+   * If passed key represents a generator object this function will return a plain object
+   * Otherwise it will return the plain value
+   * @param innerName
+   * @param regenerate
+   */
+  public getInnerActual(innerName: string, regenerate: boolean) {
+    // Check if dot notation object
+    if (innerName.includes('.')) {
+      // split into object and accessor
+      const notations = innerName.split('.');
+      if (notations.length > 2) {
+        throw new Error('Cannot go deeper than first level objects!');
+      }
+      const generatedObject = this.generateObject(notations[0], regenerate);
+      return generatedObject[notations[1]];
+    }
+
+    // If is generator return
+    if (this._object[innerName].hasOwnProperty('generate')) {
+      return this._object[innerName].generate(regenerate);
+    }
+
+    // If not generator it means its a generator object
+    // Then we need to turn the generator object into a plain object
+    return this.generateObject(innerName, regenerate);
+  }
+
   public assertExposed(actual, expected, isInnerValue: boolean, assertionQuantity: number): boolean {
+    // If no validator has been defined fallback to match exactly validation
+    this.setFallbackValidator();
     if (this._verbose) {
       console.log(`QuantiumTesting: Assertion no: ${ assertionQuantity }`);
     }
@@ -158,14 +177,17 @@ export class QuantiumTesting {
     switch (this._validator.matchCase) {
       case TestValidatorActions.MATCH_EXACTLY:
         if (typeof actual !== 'object' && typeof actual !== 'function') {
-          const expectedValue = isInnerValue ? this._object[expected].generate() : expected;
+          // If we are comparing inner value it means its a generator value or generator object
+          // return the appropriate plain value
+          const expectedValue = isInnerValue ? this.getInnerActual(expected, false) : expected;
           const actualValue = this._exposedValues.get(actual);
           if (actualValue !== expectedValue) {
             this._failedAssertions.push({
               actual: actualValue,
               expected: expectedValue,
               info: {
-                seed: Number(this._chance.seed)
+                seed: Number(this._chance.seed),
+                message: `Failed at evaluation ${ assertionQuantity }`
               }
             });
             console.log(this._failedAssertions[this.failedAssertions.length - 1]);
@@ -235,8 +257,14 @@ export class QuantiumTesting {
     return this._object;
   }
 
-  get failedAssertions(): { expected: any; actual: any; info: { seed: number } }[] {
+  get failedAssertions(): { expected: any; actual: any; info: { seed: number; message: string } }[] {
     return this._failedAssertions;
+  }
+
+  private setFallbackValidator() {
+    if (!this._validator.matchCase) {
+      this._validator.matchCase = TestValidatorActions.MATCH_EXACTLY;
+    }
   }
 
   /**
@@ -278,16 +306,28 @@ export class QuantiumTesting {
     if (!stage) {
       throw new StagingError(StageError.STAGE_NOT_FOUND);
     }
-    if (withInnerProps) {
-      const propsList = [];
+    // if inner props true we are looking for inner obj value
+    if (withInnerProps.length > 0) {
+      const propsList = []; // prop list to pass to action
       withInnerProps.forEach(prop => {
         if (this._object.hasOwnProperty(prop)) {
-          propsList.push(this._object[prop].generate(true));
+          propsList.push(this.getInnerActual(prop, true));
         }
       });
       stage.action(...propsList);
     } else {
-      stage.action();
+      try {
+        stage.action();
+      } catch (e) {
+        this.failedAssertions.push({
+          expected: null,
+          actual: null,
+          info: {
+            seed: this._chance.seed,
+            message: `Failed at preparing Stage: ${ stageName } with error ${ (e as Error).message }`
+          }
+        });
+      }
     }
     if (remove) {
       this._staging.delete(stage.stageName);
@@ -338,16 +378,21 @@ export class QuantiumTesting {
     return stages;
   }
 
-  private generateObject<T>(): T {
+  /**
+   * Turn a generator object into a plain object
+   * @param innerObjName
+   * @param regenerate If obj should re generate value if exists
+   */
+  private generateObject<T>(innerObjName: string, regenerate = false): T {
     const obj = {};
-    Object.keys(this._object).forEach(key => {
-      if (this._object[key] instanceof StringDefinition) {
-        const sDef: StringDefinition = (this._object[key] as StringDefinition);
-        obj[key] = sDef.generate();
+    Object.keys(this._object[innerObjName]).forEach(key => {
+      if (this._object[innerObjName][key] instanceof StringDefinition) {
+        const sDef: StringDefinition = (this._object[innerObjName][key] as StringDefinition);
+        obj[key] = sDef.generate(regenerate);
       }
-      if (this._object[key] instanceof QRange) {
-        const qRange: QRange = (this._object[key] as QRange);
-        obj[key] = qRange.generate();
+      if (this._object[innerObjName][key] instanceof QRange) {
+        const qRange: QRange = (this._object[innerObjName][key] as QRange);
+        obj[key] = qRange.generate(regenerate);
       }
     });
 

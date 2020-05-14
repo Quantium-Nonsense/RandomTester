@@ -29,8 +29,13 @@ const inferDemo = () => {
     }
   }
   const q = new QuantiumTesting(1, true);
-  q.inferAndCreateInner(new a());
-  console.log(q.getInner())
+  q.inferAndCreateInner(new a(), 'alpha');
+  q.setStaging(new Stage('myStage', (witAlpha) => {
+    console.log(witAlpha.a1)
+  }, ['alpha']))
+  q.expose('myExposedVal', 'myExposedValName');
+  q.assertExposed('myExposedValName', 'alpha.a1', true, 1);
+  console.log(q.getInnerActual('alpha', false))
 
 };
 
