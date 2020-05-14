@@ -1,3 +1,4 @@
+import { GeneratorUtils } from './QuantiumTester/definitions/generators/generator.utils';
 import { StringDefinition } from './QuantiumTester/definitions/generators/string-definition';
 import { Stage } from './QuantiumTester/definitions/stage/Stage';
 import { QuantiumTesting, StringDefinitionValue } from './QuantiumTester/QuantiumTester';
@@ -36,7 +37,7 @@ const inferDemo = () => {
   }, ['alpha']))
   q.expose('myExposedVal', 'myExposedValName');
   q.assertExposed('myExposedValName', 'alpha.a1', true, 1);
-  console.log(q.getInnerAsValue('alpha', false))
+  console.log(GeneratorUtils.getGeneratorAsValue('alpha', false, q.getInner()))
   console.log(q.failedAssertions);
 };
 

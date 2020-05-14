@@ -8,4 +8,4 @@ export { StringDefError } from './QuantiumTester/errors/string-def.error';
 export { StringDefinition } from './QuantiumTester/definitions/generators/string-definition';
 export { Stage } from './QuantiumTester/definitions/stage/Stage';
 export { PreparedFunction } from './QuantiumTester/definitions/prepared-function';
-export {PropsError} from './QuantiumTester/errors/props.error';
+export { PropsError } from './QuantiumTester/errors/props.error';
