@@ -1,3 +1,4 @@
+import { GeneratorUtils } from './definitions/generators/generator.utils';
 import { QRange } from './definitions/generators/range';
 import { StringDefinition } from './definitions/generators/string-definition';
 import { PreparedFunction } from './definitions/prepared-function';
@@ -150,7 +151,7 @@ export class QuantiumTesting {
    * @param innerName
    * @param regenerate
    */
-  public getInnerAsValue(innerName: string, regenerate: boolean) {
+  public getInnerAsValue(innerName: string, regenerate: boolean, innerObject: any) {
     // Check if dot notation object
     if (innerName.includes('.')) {
       // split into object and accessor
@@ -272,7 +273,7 @@ export class QuantiumTesting {
           ? expected.executeWith(...this.getMultipleInnerByValue(expected.withInnerProps))
           : expected.executeWith(...expected.props);
     } else {
-      expectedValue = isInnerValue ? this.getInnerAsValue(expected, false) : expected;
+      expectedValue = isInnerValue ? GeneratorUtils.getGeneratorAsValue(expected, false, this._object) : expected;
     }
 
     return expectedValue;
@@ -281,7 +282,7 @@ export class QuantiumTesting {
   private getMultipleInnerByValue(innerNames: string[]) {
     const toReturn = [];
     innerNames.forEach(name => {
-      toReturn.push(this.getInnerAsValue(name, false));
+      toReturn.push(GeneratorUtils.getGeneratorAsValue(name, false, this._object));
     });
     return toReturn;
   }
@@ -375,7 +376,7 @@ export class QuantiumTesting {
     if (this._verbose) {
       console.log(`QuantiumTesting: Stages to execute no: ${ toExecute.length }`);
     }
-    this.runStage(toExecute[0].stageName, false, toExecute[0].withInnerProps);
+    this.runStage(toExecute[0].stageName, false);
     toExecute.reverse().pop();
     toExecute.reverse();
     if (toExecute.length > 0) {
@@ -409,27 +410,6 @@ export class QuantiumTesting {
     });
     stages.sort((s1, s2) => s1.stageOrder - s2.stageOrder);
     return stages;
-  }
-
-  /**
-   * Turn a generator object into a plain object
-   * @param innerObjName
-   * @param regenerate If obj should re generate value if exists
-   */
-  private generateObject<T>(innerObjName: string, regenerate = false): T {
-    const obj = {};
-    Object.keys(this._object[innerObjName]).forEach(key => {
-      if (this._object[innerObjName][key] instanceof StringDefinition) {
-        const sDef: StringDefinition = (this._object[innerObjName][key] as StringDefinition);
-        obj[key] = sDef.generate(regenerate);
-      }
-      if (this._object[innerObjName][key] instanceof QRange) {
-        const qRange: QRange = (this._object[innerObjName][key] as QRange);
-        obj[key] = qRange.generate(regenerate);
-      }
-    });
-
-    return obj as T;
   }
 
   /**

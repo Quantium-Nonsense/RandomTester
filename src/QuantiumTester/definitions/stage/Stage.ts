@@ -1,3 +1,5 @@
+import { GeneratorUtils } from '../generators/generator.utils';
+
 export class Stage {
   /**
    * This variable is set by the QuantiumTester.setStage
@@ -41,7 +43,7 @@ export class Stage {
     if (this.withInnerProps) {
       this._withInnerProps.forEach(prop => {
         if (this._object.hasOwnProperty(prop)) {
-          propsList.push(this._object[prop].generate(true));
+          propsList.push(GeneratorUtils.getGeneratorAsValue(prop, true, this._object));
         }
       });
     }
