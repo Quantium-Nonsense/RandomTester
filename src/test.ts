@@ -27,17 +27,18 @@ const inferDemo = () => {
   // This test will fail
   // eslint-disable-next-line @typescript-eslint/class-name-casing
   class a {
-    constructor(public a1: string = '', public b: string ='', public c: number = 1 , public e: number = null, private d: number = 0) {
+    constructor(public a1: string = '', public b: string = '', public c: number = 1, public e: number = null, private d: number = 0) {
     }
   }
+
   const q = new QuantiumTesting(1, true);
   q.inferAndCreateInner(new a(), 'alpha');
   q.setStaging(new Stage('myStage', (witAlpha) => {
-    console.log(witAlpha.a1)
-  }, ['alpha']))
+    console.log(witAlpha.a1);
+  }, ['alpha']));
   q.expose('myExposedVal', 'myExposedValName');
   q.assertExposed('myExposedValName', 'alpha.a1', true, 1);
-  console.log(GeneratorUtils.getGeneratorAsValue('alpha', false, q.getInner()))
+  console.log(GeneratorUtils.getGeneratorFromInnerAsValue('alpha', false, q.getInner()));
   console.log(q.failedAssertions);
 };
 

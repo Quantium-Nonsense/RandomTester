@@ -1,17 +1,16 @@
+import * as _ from 'lodash';
 import { AssertionVariable } from './definitions/assert-variable/assertion-variable';
 import { BooleanBranchDescriptor } from './definitions/assert-variable/descriptors/boolean-branch.descriptor';
-import { VariableDescriptor } from './definitions/assert-variable/variable-descriptor';
+import { Descriptor } from './definitions/assert-variable/descriptors/descriptor';
 import { GeneratorUtils } from './definitions/generators/generator.utils';
-import { QRange } from './definitions/generators/range';
-import { StringDefinition } from './definitions/generators/string-definition';
 import { PreparedFunction } from './definitions/prepared-function';
+import { Definition } from './definitions/definition';
 import { Stage } from './definitions/stage/Stage';
 import { KeyError } from './errors/key-error';
 import { StageError, StagingError } from './errors/staging.error';
 import { LoggerModel } from './loggers/logger.model';
 import { Infer } from './object-creators/Infer';
 import { TestValidator, TestValidatorActions } from './test-validator/test-validator';
-import * as _ from 'lodash';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
 // @ts-ignore
@@ -82,7 +81,7 @@ export class QuantiumTesting {
    * @param name the name of the value
    * @param val the actual value
    */
-  public setProperty(name, val: QRange | StringDefinition) {
+  public setProperty<T extends Definition>(name, val: T) {
     val.chance = this._chance;
     this._object[name] = val;
   }
@@ -200,11 +199,13 @@ export class QuantiumTesting {
   }
 
   /**
+   * @deprecated
+   * Here for legacy purposes in case this idea resurfaces
    * Asserts a set variable automatically for set number of times based on descriptor
    * @param variableName
    * @param quantity
    */
-  public assertAutomatedVariable(variableName: string, quantity: number): void {
+  public assertAutomatedVariable(variableName: string, quantity: number, cleanUpFn?: () => void): void {
     // Get variable
     const actual: AssertionVariable = this._assertionVariables.get(variableName);
     if (!actual) {
@@ -212,22 +213,33 @@ export class QuantiumTesting {
     }
     this.runStages(this.getSortedStages());
     if (actual.variable instanceof PreparedFunction) {
-      const variable: PreparedFunction = actual.variable;
-      const returnedValue = variable.shouldExecuteWithInnerProps()
-          ? variable.executeWith(this.getMultipleInnerByValue(variable.withInnerProps))
-          : variable.executeWith(variable.props);
-
+      const variable: PreparedFunction = actual.variable; // Get the function to assert
+      const shouldExecuteWithOwnProps: boolean = variable.shouldExecuteWithOwnProps();
+      // Executes with definition not declared in the inner object
+      if (shouldExecuteWithOwnProps) {
+        // Pass to the definitions the chance library
+        variable.props.forEach(def => {
+          def.chance = this._chance;
+        });
+      }
+      const returnedValue = this.getExpectedValue(variable, shouldExecuteWithOwnProps);
       if (actual.descriptor instanceof BooleanBranchDescriptor) {
         this.evaluateBooleanBranch(returnedValue, actual.descriptor);
       }
     }
-    quantity -= quantity;
+    quantity -= 1;
+    if (cleanUpFn) {
+      cleanUpFn();
+    }
     if (quantity > 0) {
       this.assertAutomatedVariable(variableName, quantity);
     }
+    if (this.failedAssertions.length > 0) {
+      console.log(this.failedAssertions);
+    }
   }
 
-  public setDescriptorForVariable(varName: string, descriptor: VariableDescriptor): void {
+  public setDescriptorForVariable(varName: string, descriptor: Descriptor): void {
     const varToSetDescriptor = this._assertionVariables.get(varName);
 
     if (!varToSetDescriptor) {
@@ -297,13 +309,25 @@ export class QuantiumTesting {
     return this._failedAssertions;
   }
 
+  /**
+   * @deprecated
+   * Here for legacy purposes in case this idea might resurface
+   * @param returnedValue
+   * @param descriptor
+   */
   private evaluateBooleanBranch(returnedValue: boolean, descriptor: BooleanBranchDescriptor) {
     // if prepared function we need to execute function
     // if returned Value is truthy
+    if (this._verbose) {
+      console.log(`Assertion variable evaluated to: ${ returnedValue }`);
+    }
     if (returnedValue) {
       // we look what should happen at the descriptor
       const decriptorGuessedCorrectly = descriptor.ifEvaluatesToTrueExpect();
       // If the descriptor guess is right the test has resolved correctly otherwise we add to fail assertions
+      if (this._verbose) {
+        console.log(`Descriptor evaluated to ${ decriptorGuessedCorrectly }`);
+      }
       if (!decriptorGuessedCorrectly) {
         this._failedAssertions.push({
           actual: returnedValue,
@@ -314,12 +338,14 @@ export class QuantiumTesting {
           }
         });
       }
-      return;
     }
     // If returned value evaluates to falsy
     if (!returnedValue) {
       const decriptorGuessedCorrectly = descriptor.ifEvaluatesToFalseExpect();
       // If the descriptor guess is right the test has resolved correclty otherwise we add to fail assertions
+      if (this._verbose) {
+        console.log(`Descriptor evaluated to ${ decriptorGuessedCorrectly }`);
+      }
       if (!decriptorGuessedCorrectly) {
         this._failedAssertions.push({
           actual: returnedValue,
@@ -331,7 +357,6 @@ export class QuantiumTesting {
         });
       }
     }
-
   }
 
   private getExpectedValue(expected, isInnerValue: boolean) {
@@ -339,9 +364,11 @@ export class QuantiumTesting {
     if (expected instanceof PreparedFunction) {
       expectedValue = expected.shouldExecuteWithInnerProps()
           ? expected.executeWith(...this.getMultipleInnerByValue(expected.withInnerProps))
-          : expected.executeWith(...expected.props);
+          : expected.executeWith(...expected.props.map((definition: Definition) => {
+            return definition.generate(true);
+          }));
     } else {
-      expectedValue = isInnerValue ? GeneratorUtils.getGeneratorAsValue(expected, false, this._object) : expected;
+      expectedValue = isInnerValue ? GeneratorUtils.getGeneratorFromInnerAsValue(expected, false, this._object) : expected;
     }
 
     return expectedValue;
@@ -350,7 +377,7 @@ export class QuantiumTesting {
   private getMultipleInnerByValue(innerNames: string[]) {
     const toReturn = [];
     innerNames.forEach(name => {
-      toReturn.push(GeneratorUtils.getGeneratorAsValue(name, false, this._object));
+      toReturn.push(GeneratorUtils.getGeneratorFromInnerAsValue(name, false, this._object));
     });
     return toReturn;
   }

@@ -1,9 +1,9 @@
 import { StringDefError } from '../../errors/string-def.error';
 import { StringDefinitionValue } from '../../QuantiumTester';
-import { Seedable } from '../seedable';
+import { Definition } from '../definition';
 import { IGenerator } from './IGenerator';
 
-export class StringDefinition extends Seedable implements IGenerator {
+export class StringDefinition extends Definition {
   generatedValue: string | number;
 
   private _definitions: StringDefinitionValue[] | string[] = [];

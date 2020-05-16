@@ -43,7 +43,7 @@ export class Stage {
     if (this.withInnerProps) {
       this._withInnerProps.forEach(prop => {
         if (this._object.hasOwnProperty(prop)) {
-          propsList.push(GeneratorUtils.getGeneratorAsValue(prop, true, this._object));
+          propsList.push(GeneratorUtils.getGeneratorFromInnerAsValue(prop, true, this._object));
         }
       });
     }

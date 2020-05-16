@@ -1,7 +1,7 @@
-import { Seedable } from '../seedable';
+import { Definition } from '../definition';
 import { IGenerator } from './IGenerator';
 
-export class QRange extends Seedable implements IGenerator {
+export class QRange extends Definition {
   generatedValue: string | number | boolean;
 
   private _from: number;

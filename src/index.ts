@@ -11,7 +11,6 @@ export { SingleStage } from './QuantiumTester/definitions/stage/SingleStage';
 export { PreparedFunction } from './QuantiumTester/definitions/prepared-function';
 export { PropsError } from './QuantiumTester/errors/props.error';
 export { AssertionVariable } from './QuantiumTester/definitions/assert-variable/assertion-variable';
-export { VariableDescriptor } from './QuantiumTester/definitions/assert-variable/variable-descriptor';
 export {
   BooleanBranchDescriptor
 } from './QuantiumTester/definitions/assert-variable/descriptors/boolean-branch.descriptor';

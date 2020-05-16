@@ -1,4 +1,5 @@
 import { PropsError } from '../..';
+import { Definition } from './definition';
 
 export class PreparedFunction {
   /**
@@ -10,7 +11,7 @@ export class PreparedFunction {
   constructor(
       private _func: (...args) => any,
       private _withInnerProps?: string[],
-      private _props?: any
+      private _props?: Definition[]
   ) {
     if (this._props && this._withInnerProps) {
       throw new PropsError('Cannot declare both props and inner props');
@@ -48,11 +49,11 @@ export class PreparedFunction {
     this._withInnerProps = value;
   }
 
-  get props(): any {
+  get props(): Definition[] {
     return this._props;
   }
 
-  set props(value: any) {
+  set props(value: Definition[]) {
     if (this._withInnerProps) {
       throw new PropsError('Inner props are set please delete or clear them before setting props');
     }

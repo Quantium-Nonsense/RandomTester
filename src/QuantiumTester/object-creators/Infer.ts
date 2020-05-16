@@ -1,5 +1,5 @@
 import { QRange, StringDefinition, StringDefinitionValue } from '../..';
-import { Seedable } from '../definitions/seedable';
+import { Definition } from '../definitions/definition';
 
 export class Infer {
   public static object(objToInfer, verbose = false, chance) {

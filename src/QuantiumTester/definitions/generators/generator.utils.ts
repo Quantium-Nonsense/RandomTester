@@ -2,6 +2,7 @@ import { QRange } from './range';
 import { StringDefinition } from './string-definition';
 
 export class GeneratorUtils {
+
   /**
    * If passed key represents a generator object this function will return a plain object
    * Otherwise it will return the plain value
@@ -9,7 +10,7 @@ export class GeneratorUtils {
    * @param regenerate To regenerate the property if already created
    * @param innerObject The actual object
    */
-  public static   getGeneratorAsValue(innerName: string, regenerate: boolean, innerObject: any) {
+  public static getGeneratorFromInnerAsValue(innerName: string, regenerate: boolean, innerObject: any) {
     // Check if dot notation object
     if (innerName.includes('.')) {
       // split into object and accessor

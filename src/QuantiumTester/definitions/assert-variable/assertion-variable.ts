@@ -1,8 +1,8 @@
 import { PreparedFunction } from '../prepared-function';
-import { VariableDescriptor } from './variable-descriptor';
+import { Descriptor } from './descriptors/descriptor';
 
 export class AssertionVariable {
-  private _descriptor: VariableDescriptor;
+  private _descriptor: Descriptor;
 
   constructor(
       private _varName: string,
@@ -11,11 +11,11 @@ export class AssertionVariable {
   }
 
 
-  get descriptor(): VariableDescriptor {
+  get descriptor(): Descriptor {
     return this._descriptor;
   }
 
-  set descriptor(value: VariableDescriptor) {
+  set descriptor(value: Descriptor) {
     this._descriptor = value;
   }
 

@@ -1,7 +1,7 @@
-import { Seedable } from '../seedable';
+import { Definition } from '../definition';
 import { IGenerator } from './IGenerator';
 
-export class BooleanDefinition extends Seedable implements IGenerator {
+export class BooleanDefinition extends Definition {
   generatedValue: boolean;
 
   constructor(
