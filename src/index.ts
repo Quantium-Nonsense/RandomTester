@@ -17,6 +17,3 @@ export {
 } from './QuantiumTester/definitions/assert-variable/descriptors/boolean-branch.descriptor';
 export { TestValidator, TestValidatorActions } from './QuantiumTester/test-validator/test-validator';
 export { BooleanDefinition } from './QuantiumTester/definitions/generators/boolean.definition';
-export {
-  BooleanBranchDescriptor
-} from './QuantiumTester/definitions/assert-variable/descriptors/boolean-branch.descriptor';
