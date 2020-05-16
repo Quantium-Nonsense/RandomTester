@@ -290,6 +290,7 @@ export class QuantiumTesting {
 
   private setFallbackValidator() {
     if (!this._validator.matchCase) {
+      console.warn('No Validation specified falling back to default MATCH_EXACTLY')
       this._validator.matchCase = TestValidatorActions.MATCH_EXACTLY;
     }
   }
