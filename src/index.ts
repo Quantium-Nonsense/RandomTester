@@ -9,3 +9,5 @@ export { StringDefinition } from './QuantiumTester/definitions/generators/string
 export { Stage } from './QuantiumTester/definitions/stage/Stage';
 export { PreparedFunction } from './QuantiumTester/definitions/prepared-function';
 export { PropsError } from './QuantiumTester/errors/props.error';
+export { AssertionVariable } from './QuantiumTester/definitions/assert-variable/assertion-variable';
+export { VariableDescriptor } from './QuantiumTester/definitions/assert-variable/variable-descriptor';

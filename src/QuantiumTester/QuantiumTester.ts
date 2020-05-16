@@ -1,3 +1,5 @@
+import { AssertionVariable } from './definitions/assert-variable/assertion-variable';
+import { VariableDescriptor } from './definitions/assert-variable/variable-descriptor';
 import { GeneratorUtils } from './definitions/generators/generator.utils';
 import { QRange } from './definitions/generators/range';
 import { StringDefinition } from './definitions/generators/string-definition';
@@ -17,6 +19,7 @@ const Chance = require('chance');
 export class QuantiumTesting {
   private _failedAssertions: LoggerModel[] = [];
   private readonly _object: { [key: string]: any };
+  private readonly _assertionVariables: Map<string, AssertionVariable>;
   private readonly _chance;
   /**
    * The key of the property that will go through testing
@@ -48,7 +51,7 @@ export class QuantiumTesting {
     this._validator = new TestValidator();
     this._exposedValues = new Map<string, any>();
     this._failedAssertions = [];
-
+    this._assertionVariables = new Map<string, AssertionVariable>();
   }
 
   /**
@@ -180,21 +183,48 @@ export class QuantiumTesting {
   }
 
   /**
+   * Will set a variable that will be asserted later on
+   * This is used for the automated tests
+   * @param variable
+   */
+  public setAssertionVariable(variable: AssertionVariable) {
+    // Check if name exists in map
+    const varToCheck = this._assertionVariables.get(variable.varName);
+    if (varToCheck) {
+      this._assertionVariables.delete(varToCheck.varName);
+      this._assertionVariables.set(variable.varName, variable);
+    } else {
+      this._assertionVariables.set(variable.varName, variable);
+    }
+  }
+
+  public setDescriptorForVariable(varName: string, descriptor: VariableDescriptor) {
+    const varToSetDescriptor = this._assertionVariables.get(varName);
+
+    if (!varToSetDescriptor) {
+      throw new Error('No such variable has been set!');
+    }
+
+    varToSetDescriptor.descriptor = descriptor;
+  }
+
+  /**
    * Will set a value as exposed, this means the inner class can access it so it can assert it
+   * This is the actual value
    * @param value The value to expose
    * @param name The name of the value
    */
   public expose(value, name: string): void {
-    let valueToAdd: any;
+    let valueToExpose: any;
 
     this._exposedValues.forEach((val, key) => {
       const toCheck = this._exposedValues.get(name);
       if (toCheck) {
-        valueToAdd = val;
+        valueToExpose = val;
       }
     });
 
-    if (valueToAdd) {
+    if (valueToExpose) {
       /*   if (this._verbose) {
        //console.log('exposed value found deleting and adding....');
        }*/
