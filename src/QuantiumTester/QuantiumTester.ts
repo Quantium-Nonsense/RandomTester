@@ -148,7 +148,7 @@ export class QuantiumTesting {
     }
   }
 
-  public assertExposed(actual, expected, isInnerValue: boolean, assertionQuantity: number): boolean {
+  public assertExposed(actual: string, expected, isInnerValue: boolean, assertionQuantity: number): boolean {
     // If no validator has been defined fallback to match exactly validation
     this.setFallbackValidator();
     if (this._verbose) {
@@ -243,19 +243,34 @@ export class QuantiumTesting {
     return this._failedAssertions;
   }
 
-  private getExpectedValue(expected, isInnerValue: boolean) {
+  /**
+   * Turns the expected value into an actual value or returns the value as is
+   * This means the expected value might be a prepared function a definition etc. we need to have na actual value
+   * @param expected
+   * @param isInnerValue
+   */
+  private getExpectedValue(
+      expected: PreparedFunction
+          | string | boolean
+          | number | Definition, isInnerValue: boolean) {
     let expectedValue;
+    // If prepared function run with params and return evaluation
     if (expected instanceof PreparedFunction) {
       expectedValue = expected.shouldExecuteWithInnerProps()
           ? expected.executeWith(...this.getMultipleInnerByValue(expected.withInnerProps))
           : expected.executeWith(...expected.props.map((definition: Definition) => {
             return definition.generate(true);
           }));
-    } else {
-      expectedValue = isInnerValue ? GeneratorUtils.getGeneratorFromInnerAsValue(expected, false, this._object) : expected;
+      return expectedValue;
     }
-
-    return expectedValue;
+    // Otherwise check if is inner value name or plain value
+    if (isInnerValue) {
+      if (typeof expected !== 'string') {
+        throw new Error('If isInnerValue is set to true expected value must be the string name that was set');
+      }
+      return GeneratorUtils.getGeneratorFromInnerAsValue(expected, false, this._object);
+    }
+    return expected;
   }
 
   private getMultipleInnerByValue(innerNames: string[]) {
