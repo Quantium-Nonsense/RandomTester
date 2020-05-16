@@ -148,7 +148,14 @@ export class QuantiumTesting {
     }
   }
 
-  public assertExposed(actual: string, expected, isInnerValue: boolean, assertionQuantity: number): boolean {
+  public assertExposed(
+      actual: string,
+      expected: PreparedFunction
+          | string | boolean
+          | number | Definition,
+      isInnerValue: boolean,
+      assertionQuantity: number
+  ): boolean {
     // If no validator has been defined fallback to match exactly validation
     this.setFallbackValidator();
     if (this._verbose) {
