@@ -182,72 +182,6 @@ export class QuantiumTesting {
     return this._failedAssertions.length === 0;
   }
 
-  /**
-   * Will set a variable that will be asserted later on
-   * This is used for the automated tests
-   * @param variable
-   */
-  public setAssertionVariable(variable: AssertionVariable) {
-    // Check if name exists in map
-    const varToCheck = this._assertionVariables.get(variable.varName);
-    if (varToCheck) {
-      this._assertionVariables.delete(varToCheck.varName);
-      this._assertionVariables.set(variable.varName, variable);
-    } else {
-      this._assertionVariables.set(variable.varName, variable);
-    }
-  }
-
-  /**
-   * @deprecated
-   * Here for legacy purposes in case this idea resurfaces
-   * Asserts a set variable automatically for set number of times based on descriptor
-   * @param variableName
-   * @param quantity
-   */
-  public assertAutomatedVariable(variableName: string, quantity: number, cleanUpFn?: () => void): void {
-    // Get variable
-    const actual: AssertionVariable = this._assertionVariables.get(variableName);
-    if (!actual) {
-      throw new Error('Could not find variable name');
-    }
-    this.runStages(this.getSortedStages());
-    if (actual.variable instanceof PreparedFunction) {
-      const variable: PreparedFunction = actual.variable; // Get the function to assert
-      const shouldExecuteWithOwnProps: boolean = variable.shouldExecuteWithOwnProps();
-      // Executes with definition not declared in the inner object
-      if (shouldExecuteWithOwnProps) {
-        // Pass to the definitions the chance library
-        variable.props.forEach(def => {
-          def.chance = this._chance;
-        });
-      }
-      const returnedValue = this.getExpectedValue(variable, shouldExecuteWithOwnProps);
-      if (actual.descriptor instanceof BooleanBranchDescriptor) {
-        this.evaluateBooleanBranch(returnedValue, actual.descriptor);
-      }
-    }
-    quantity -= 1;
-    if (cleanUpFn) {
-      cleanUpFn();
-    }
-    if (quantity > 0) {
-      this.assertAutomatedVariable(variableName, quantity);
-    }
-    if (this.failedAssertions.length > 0) {
-      console.log(this.failedAssertions);
-    }
-  }
-
-  public setDescriptorForVariable(varName: string, descriptor: Descriptor): void {
-    const varToSetDescriptor = this._assertionVariables.get(varName);
-
-    if (!varToSetDescriptor) {
-      throw new Error('No such variable has been set!');
-    }
-
-    varToSetDescriptor.descriptor = descriptor;
-  }
 
   /**
    * Will set a value as exposed, this means the inner class can access it so it can assert it
@@ -307,56 +241,6 @@ export class QuantiumTesting {
 
   get failedAssertions(): { expected: any; actual: any; info: { seed: number; message: string } }[] {
     return this._failedAssertions;
-  }
-
-  /**
-   * @deprecated
-   * Here for legacy purposes in case this idea might resurface
-   * @param returnedValue
-   * @param descriptor
-   */
-  private evaluateBooleanBranch(returnedValue: boolean, descriptor: BooleanBranchDescriptor) {
-    // if prepared function we need to execute function
-    // if returned Value is truthy
-    if (this._verbose) {
-      console.log(`Assertion variable evaluated to: ${ returnedValue }`);
-    }
-    if (returnedValue) {
-      // we look what should happen at the descriptor
-      const decriptorGuessedCorrectly = descriptor.ifEvaluatesToTrueExpect();
-      // If the descriptor guess is right the test has resolved correctly otherwise we add to fail assertions
-      if (this._verbose) {
-        console.log(`Descriptor evaluated to ${ decriptorGuessedCorrectly }`);
-      }
-      if (!decriptorGuessedCorrectly) {
-        this._failedAssertions.push({
-          actual: returnedValue,
-          expected: descriptor,
-          info: {
-            message: 'The descriptors function did not evaluate to true',
-            seed: this._chance.seed
-          }
-        });
-      }
-    }
-    // If returned value evaluates to falsy
-    if (!returnedValue) {
-      const decriptorGuessedCorrectly = descriptor.ifEvaluatesToFalseExpect();
-      // If the descriptor guess is right the test has resolved correclty otherwise we add to fail assertions
-      if (this._verbose) {
-        console.log(`Descriptor evaluated to ${ decriptorGuessedCorrectly }`);
-      }
-      if (!decriptorGuessedCorrectly) {
-        this._failedAssertions.push({
-          actual: returnedValue,
-          expected: descriptor,
-          info: {
-            message: 'The descriptors function did not evaluate to true',
-            seed: this._chance.seed
-          }
-        });
-      }
-    }
   }
 
   private getExpectedValue(expected, isInnerValue: boolean) {
