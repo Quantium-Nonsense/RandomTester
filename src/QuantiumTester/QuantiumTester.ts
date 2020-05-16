@@ -52,6 +52,7 @@ export class QuantiumTesting {
     this._exposedValues = new Map<string, any>();
     this._failedAssertions = [];
     this._assertionVariables = new Map<string, AssertionVariable>();
+    this.setFallbackValidator();
   }
 
   /**
@@ -114,38 +115,25 @@ export class QuantiumTesting {
     this._staging.set(stage.stageName, stage);
   }
 
-  public async withAsyncAssertExposed(actual, expected, isInnerValue: boolean, assertionQuantity: number): Promise<boolean> {
+  public async assertExposedAsync(
+      actual: string,
+      expected: PreparedFunction
+          | string | boolean
+          | number | Definition,
+      isInnerValue: boolean,
+      assertionQuantity: number): Promise<boolean> {
     if (this._verbose) {
       console.log(`QuantiumTesting: Assertion no: ${ assertionQuantity }`);
     }
 
     await this.runStagesAsync(this.getSortedStages());
-    switch (this._validator.matchCase) {
-      case TestValidatorActions.MATCH_EXACTLY:
-        if (typeof actual !== 'object' && typeof actual !== 'function') {
-          const expectedValue = isInnerValue ? this._object[expected].generate() : expected;
-          const actualValue = this._exposedValues.get(actual);
-          if (this._verbose) {
-            this.printLog(expectedValue, actualValue);
-          }
-          if (actualValue !== expectedValue) {
-            this._failedAssertions.push({
-              actual: actualValue,
-              expected: expectedValue,
-              info: {
-                seed: Number(this._chance.seed),
-                message: 'Failed at evaluation'
-              }
-            });
-            console.log(this._failedAssertions[this.failedAssertions.length - 1]);
-          }
-        }
-        assertionQuantity -= 1;
-        if (assertionQuantity <= 0) {
-          return this._failedAssertions.length === 0;
-        }
-        await this.withAsyncAssertExposed(actual, expected, isInnerValue, assertionQuantity);
+    this.assert(actual, expected, isInnerValue, assertionQuantity);
+    assertionQuantity -= 1;
+    if (assertionQuantity <= 0) {
+      return this._failedAssertions.length === 0;
     }
+    await this.assertExposedAsync(actual, expected, isInnerValue, assertionQuantity);
+    return this._failedAssertions.length === 0;
   }
 
   public assertExposed(
@@ -156,31 +144,11 @@ export class QuantiumTesting {
       isInnerValue: boolean,
       assertionQuantity: number
   ): boolean {
-    // If no validator has been defined fallback to match exactly validation
-    this.setFallbackValidator();
     if (this._verbose) {
       console.log(`QuantiumTesting: Assertion no: ${ assertionQuantity }`);
     }
     this.runStages(this.getSortedStages());
-
-    switch (this._validator.matchCase) {
-      case TestValidatorActions.MATCH_EXACTLY:
-        if (typeof actual !== 'function') {
-          // If we are comparing inner value it means its a generator value or generator object
-          // return the appropriate plain value
-          const expectedValue = this.getExpectedValue(expected, isInnerValue);
-          const actualValue = this._exposedValues.get(actual);
-          if (_.isEqual(actualValue, expectedValue)) {
-            this.logFailedAssertion(actualValue, expectedValue, assertionQuantity);
-            console.log(this._failedAssertions[this.failedAssertions.length - 1]);
-          }
-        }
-        break;
-      case TestValidatorActions.INCLUDE_VALUE:
-        break;
-      default:
-        break;
-    }
+    this.assert(actual, expected, isInnerValue, assertionQuantity);
     assertionQuantity -= 1;
     if (assertionQuantity <= 0) {
       return this._failedAssertions.length === 0;
@@ -290,9 +258,41 @@ export class QuantiumTesting {
 
   private setFallbackValidator() {
     if (!this._validator.matchCase) {
-      console.warn('No Validation specified falling back to default MATCH_EXACTLY')
       this._validator.matchCase = TestValidatorActions.MATCH_EXACTLY;
     }
+  }
+
+  private assert(
+      actual: string,
+      expected: PreparedFunction
+          | string | boolean
+          | number | Definition,
+      isInnerValue: boolean,
+      assertionQuantity: number
+  ): void {
+    switch (this._validator.matchCase) {
+      case TestValidatorActions.MATCH_EXACTLY:
+        if (typeof actual !== 'function') {
+          // If we are comparing inner value it means its a generator value or generator object
+          // return the appropriate plain value
+          const expectedValue = this.getExpectedValue(expected, isInnerValue);
+          const actualValue = this._exposedValues.get(actual);
+          // Using loadash for deep equality
+          console.log(`Actual is ${actualValue}`)
+          console.log(`Expected is ${expectedValue}`)
+          if (!_.isEqual(actualValue, expectedValue)) {
+            this.logFailedAssertion(actualValue, expectedValue, assertionQuantity);
+            console.log(this._failedAssertions[this.failedAssertions.length - 1]);
+          }
+        }
+        break;
+      case TestValidatorActions.INCLUDE_VALUE:
+        // todo: implement me please!
+        break;
+      default:
+        break;
+    }
+
   }
 
   /**
