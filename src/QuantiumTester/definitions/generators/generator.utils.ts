@@ -9,7 +9,7 @@ export class GeneratorUtils {
    * @param regenerate To regenerate the property if already created
    * @param innerObject The actual object
    */
-  public static getGeneratorAsValue(innerName: string, regenerate: boolean, innerObject: any) {
+  public static   getGeneratorAsValue(innerName: string, regenerate: boolean, innerObject: any) {
     // Check if dot notation object
     if (innerName.includes('.')) {
       // split into object and accessor

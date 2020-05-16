@@ -1,5 +1,5 @@
-import { BooleanBranchDescriptor } from '../../lib';
 import { AssertionVariable } from './definitions/assert-variable/assertion-variable';
+import { BooleanBranchDescriptor } from './definitions/assert-variable/descriptors/boolean-branch.descriptor';
 import { VariableDescriptor } from './definitions/assert-variable/variable-descriptor';
 import { GeneratorUtils } from './definitions/generators/generator.utils';
 import { QRange } from './definitions/generators/range';
@@ -210,9 +210,20 @@ export class QuantiumTesting {
     if (!actual) {
       throw new Error('Could not find variable name');
     }
-    if (actual.descriptor instanceof BooleanBranchDescriptor) {
-      // We are automatically evaluating a boolean branch
+    this.runStages(this.getSortedStages());
+    if (actual.variable instanceof PreparedFunction) {
+      const variable: PreparedFunction = actual.variable;
+      const returnedValue = variable.shouldExecuteWithInnerProps()
+          ? variable.executeWith(this.getMultipleInnerByValue(variable.withInnerProps))
+          : variable.executeWith(variable.props);
 
+      if (actual.descriptor instanceof BooleanBranchDescriptor) {
+        this.evaluateBooleanBranch(returnedValue, actual.descriptor);
+      }
+    }
+    quantity -= quantity;
+    if (quantity > 0) {
+      this.assertAutomatedVariable(variableName, quantity);
     }
   }
 
@@ -284,6 +295,43 @@ export class QuantiumTesting {
 
   get failedAssertions(): { expected: any; actual: any; info: { seed: number; message: string } }[] {
     return this._failedAssertions;
+  }
+
+  private evaluateBooleanBranch(returnedValue: boolean, descriptor: BooleanBranchDescriptor) {
+    // if prepared function we need to execute function
+    // if returned Value is truthy
+    if (returnedValue) {
+      // we look what should happen at the descriptor
+      const decriptorGuessedCorrectly = descriptor.ifEvaluatesToTrueExpect();
+      // If the descriptor guess is right the test has resolved correctly otherwise we add to fail assertions
+      if (!decriptorGuessedCorrectly) {
+        this._failedAssertions.push({
+          actual: returnedValue,
+          expected: descriptor,
+          info: {
+            message: 'The descriptors function did not evaluate to true',
+            seed: this._chance.seed
+          }
+        });
+      }
+      return;
+    }
+    // If returned value evaluates to falsy
+    if (!returnedValue) {
+      const decriptorGuessedCorrectly = descriptor.ifEvaluatesToFalseExpect();
+      // If the descriptor guess is right the test has resolved correclty otherwise we add to fail assertions
+      if (!decriptorGuessedCorrectly) {
+        this._failedAssertions.push({
+          actual: returnedValue,
+          expected: descriptor,
+          info: {
+            message: 'The descriptors function did not evaluate to true',
+            seed: this._chance.seed
+          }
+        });
+      }
+    }
+
   }
 
   private getExpectedValue(expected, isInnerValue: boolean) {
