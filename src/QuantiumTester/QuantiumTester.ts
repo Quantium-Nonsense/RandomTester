@@ -1,3 +1,4 @@
+import { BooleanBranchDescriptor } from '../../lib';
 import { AssertionVariable } from './definitions/assert-variable/assertion-variable';
 import { VariableDescriptor } from './definitions/assert-variable/variable-descriptor';
 import { GeneratorUtils } from './definitions/generators/generator.utils';
@@ -198,7 +199,24 @@ export class QuantiumTesting {
     }
   }
 
-  public setDescriptorForVariable(varName: string, descriptor: VariableDescriptor) {
+  /**
+   * Asserts a set variable automatically for set number of times based on descriptor
+   * @param variableName
+   * @param quantity
+   */
+  public assertAutomatedVariable(variableName: string, quantity: number): void {
+    // Get variable
+    const actual: AssertionVariable = this._assertionVariables.get(variableName);
+    if (!actual) {
+      throw new Error('Could not find variable name');
+    }
+    if (actual.descriptor instanceof BooleanBranchDescriptor) {
+      // We are automatically evaluating a boolean branch
+
+    }
+  }
+
+  public setDescriptorForVariable(varName: string, descriptor: VariableDescriptor): void {
     const varToSetDescriptor = this._assertionVariables.get(varName);
 
     if (!varToSetDescriptor) {

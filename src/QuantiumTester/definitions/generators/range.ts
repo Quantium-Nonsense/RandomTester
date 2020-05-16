@@ -2,7 +2,7 @@ import { Seedable } from '../seedable';
 import { IGenerator } from './IGenerator';
 
 export class QRange extends Seedable implements IGenerator {
-  generatedValue: string | number;
+  generatedValue: string | number | boolean;
 
   private _from: number;
   private _to: number;
@@ -34,6 +34,7 @@ export class QRange extends Seedable implements IGenerator {
     if (this._allowNullable && this._chance.integer({min: 0, max: 100}) <= 5) { // 5% chance of triggering
       generated = this._chance.pickone([null, undefined, NaN]);
       this.generatedValue = generated;
+      return generated;
     }
     generated = this._asInteger ? this._chance.integer({
       min: this._from,

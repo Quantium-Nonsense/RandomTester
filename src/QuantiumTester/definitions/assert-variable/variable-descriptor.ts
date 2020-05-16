@@ -1,16 +1,15 @@
+import { Descriptor } from './descriptors/descriptor';
+
 export class VariableDescriptor {
-  constructor(private _description: Descriptors) {
+  constructor(private _description: Descriptor) {
   }
 
-  get description(): Descriptors {
+  get description(): Descriptor {
     return this._description;
   }
 
-  set description(value: Descriptors) {
+  set description(value: Descriptor) {
     this._description = value;
   }
 }
 
-export enum Descriptors {
-  BOOLEAN_BRANCH
-}
